@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>消耗性用品申請系統</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        .item-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: #f9f9f9; padding: 10px; border-radius: 4px; }
+        .item-row select { flex: 2; }
+        .item-row input { flex: 1; }
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-add { background-color: #28a745; color: white; margin-bottom: 20px; width: 100%; }
+        .btn-submit { background-color: #007bff; color: white; width: 100%; font-size: 18px; margin-top: 20px; }
+        .btn-remove { background-color: #dc3545; color: white; padding: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>消耗性用品申請表</h2>
+    <div class="form-group"><label>姓名</label><input type="text" id="userName" placeholder="請輸入姓名"></div>
+    <div class="form-group">
+        <label>部門</label>
+        <select id="department">
+            <option value="">-- 請選擇部門 --</option>
+            <option value="業務部">業務部</option>
+            <option value="技術服務部">技術服務部</option>
+            <option value="資安系統部">資安系統部</option>
+            <option value="管理部">管理部</option>
+        </select>
+    </div>
+    <div id="itemList">
+        <div class="item-row">
+            <select class="item-name">
+                <option value="">-- 選擇用品 --</option>
+                <option value="紙">紙 (A4/A3)</option>
+                <option value="筆">原子筆/簽字筆</option>
+                <option value="文件夾">文件夾</option>
+                <option value="訂書針">訂書針</option>
+                <option value="便利貼">便利貼</option>
+            </select>
+            <input type="number" class="item-qty" placeholder="數量" min="1" value="1">
+            <button type="button" class="btn btn-remove" onclick="removeRow(this)">刪除</button>
+        </div>
+    </div>
+    <button type="button" class="btn btn-add" onclick="addRow()">+ 新增下一項用品</button>
+    <button type="button" id="submitBtn" class="btn btn-submit" onclick="submitForm()">確認送出申請</button>
+</div>
+
+<script>
+    function addRow() {
+        const itemList = document.getElementById('itemList');
+        const newRow = document.createElement('div');
+        newRow.className = 'item-row';
+        newRow.innerHTML = `<select class="item-name"><option value="">-- 選擇用品 --</option><option value="紙">紙</option><option value="筆">筆</option><option value="文件夾">文件夾</option></select><input type="number" class="item-qty" placeholder="數量" min="1" value="1"><button type="button" class="btn btn-remove" onclick="removeRow(this)">刪除</button>`;
+        itemList.appendChild(newRow);
+    }
+    function removeRow(btn) { btn.parentElement.remove(); }
+
+    async function submitForm() {
+        const name = document.getElementById('userName').value;
+        const dept = document.getElementById('department').value;
+        const items = [];
+        document.querySelectorAll('.item-row').forEach(row => {
+            const itemName = row.querySelector('.item-name').value;
+            const itemQty = row.querySelector('.item-qty').value;
+            if (itemName && itemQty) items.push({ name: itemName, qty: itemQty });
+        });
+
+        if (!name || !dept || items.length === 0) { alert("請填寫完整資訊！"); return; }
+
+        // 【關鍵：請把下面的 YOUR_URL 換成你複製的 Google 網址】
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbzM2XBEZ_ja4gzJ7qizr2eC2uuMhZE382eWqL3vOkIcxA-XTnzRde0EGIyrpF9Xu01r/exec'; 
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "傳送中...";
+
+        try {
+            await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ name, dept, items }) });
+            alert("送出成功！");
+            location.reload();
+        } catch (e) {
+            alert("錯誤：" + e);
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>

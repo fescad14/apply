@@ -1,300 +1,1788 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>財宏公司消耗性用品申請單</title>
-    <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f7f6; padding: 20px; line-height: 1.6; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: #004a99; text-align: center; margin-bottom: 5px; letter-spacing: 2px; }
-        .info-bar { text-align: center; color: #d9534f; font-weight: bold; font-size: 14px; margin-bottom: 20px; padding: 10px; border-top: 1px solid #eee; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-        .item-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; background: #f0f4f8; padding: 15px; border-radius: 8px; border-left: 5px solid #004a99; }
-        .item-name { flex: 3; } /* 用品選單加寬 */
-        .item-qty { flex: 1; }
-        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-add { background-color: #5cb85c; color: white; margin-bottom: 20px; width: 100%; }
-        .btn-submit { background-color: #004a99; color: white; width: 100%; font-size: 18px; margin-top: 10px; }
-        .btn-remove { background-color: #d9534f; color: white; padding: 10px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>消耗性用品申請系統</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#21261F;
+    --paper:#EDEFE9;
+    --surface:#FFFFFF;
+    --line:#CBCFC3;
+    --line-soft:#DDE0D5;
+    --muted:#6B7063;
+    --accent:#B8862B;
+    --accent-dark:#8C6620;
+    --accent-soft:#F1E4C6;
+    --teal:#3E6B5C;
+    --teal-soft:#DEE9E4;
+    --rust:#9C4A32;
+    --rust-soft:#F1DDD5;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  :root{ padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+  html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  h1,h2,h3,.brand{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+
+  #app{display:flex;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{width:216px;flex-shrink:0;background:var(--ink);color:#EDEFE9;display:flex;flex-direction:column;}
+  .brand{padding:22px 20px 16px;font-size:18px;font-weight:700;letter-spacing:0.2px;border-bottom:1px solid rgba(255,255,255,0.12);line-height:1.4;}
+  .brand small{display:block;font-family:'IBM Plex Sans',sans-serif;font-weight:400;font-size:12px;color:#B7BDAC;margin-top:4px;}
+  nav{flex:1;padding:14px 0;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:14px;cursor:pointer;color:#D6D9CC;border-left:3px solid transparent;}
+  .nav-item .dot{width:6px;height:6px;border-radius:50%;background:#5B6152;flex-shrink:0;}
+  .nav-item:hover{background:rgba(255,255,255,0.05);color:#fff;}
+  .nav-item.active{color:#fff;background:rgba(255,255,255,0.08);border-left-color:var(--accent);}
+  .nav-item.active .dot{background:var(--accent);}
+  .sidebar-foot{padding:14px 20px;font-size:11px;color:#8B917E;border-top:1px solid rgba(255,255,255,0.12);}
+
+  /* Main */
+  main{flex:1;min-width:0;padding:32px 40px 60px;}
+  .page-head{margin-bottom:24px;}
+  .page-head h1{font-size:22px;margin:0 0 6px;}
+  .page-head p{margin:0;color:var(--muted);font-size:13.5px;max-width:640px;line-height:1.6;}
+
+  .panel{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+  .panel + .panel{margin-top:0;}
+  .panel h2{font-size:15px;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line-soft);}
+  .panel h3{font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:600;}
+
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;}
+  input[type=text],input[type=number],input[type=email],input[type=date],textarea,select{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
+    font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
+  }
+  textarea{resize:vertical;min-height:60px;}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .field{margin-bottom:16px;}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius);border:1px solid var(--ink);
+    background:var(--ink);color:#fff;font-size:13.5px;font-weight:500;cursor:pointer;font-family:inherit;}
+  .btn:hover{background:#343B2C;}
+  .btn.primary{background:var(--accent-dark);border-color:var(--accent-dark);}
+  .btn.primary:hover{background:#74531A;}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);}
+  .btn.ghost:hover{background:var(--paper);}
+  .btn.small{padding:5px 11px;font-size:12.5px;}
+  .btn.danger-o{background:transparent;border-color:var(--rust);color:var(--rust);}
+  .btn.teal-o{background:transparent;border-color:var(--teal);color:var(--teal);}
+  .btn:disabled{opacity:0.45;cursor:not-allowed;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;padding:0 10px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td{padding:11px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FAFAF6;}
+
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;}
+  .badge.pending{background:var(--accent-soft);color:var(--accent-dark);}
+  .badge.approved{background:var(--teal-soft);color:var(--teal);}
+  .badge.rejected{background:var(--rust-soft);color:var(--rust);}
+  .badge.low{background:var(--rust-soft);color:var(--rust);}
+  .badge.ok{background:var(--teal-soft);color:var(--teal);}
+
+  .empty{padding:40px 10px;text-align:center;color:var(--muted);font-size:13.5px;}
+  .toast{position:fixed;bottom:28px;right:28px;background:var(--ink);color:#fff;padding:16px 24px;border-radius:8px;
+    font-size:16px;font-weight:500;line-height:1.5;box-shadow:0 6px 24px rgba(0,0,0,0.25);z-index:50;max-width:420px;min-width:220px;}
+  .toast.err{background:var(--rust);}
+  .toast.ok{background:var(--teal);}
+
+  @media (max-width: 860px){
+    .toast{left:16px;right:16px;bottom:16px;max-width:none;font-size:15px;padding:14px 18px;}
+  }
+
+  .toolbar-row{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .toolbar-row input[type=text]{flex:1;min-width:180px;}
+  .toolbar-row select{width:auto;min-width:140px;}
+
+  details.cat-block{margin-bottom:10px;border-bottom:1px solid var(--line-soft);}
+  details.cat-block summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent-dark);padding:8px 0;user-select:none;}
+  details.cat-block summary::-webkit-details-marker{display:none;}
+  details.cat-block summary::before{content:'▸';display:inline-block;margin-right:6px;transition:transform .15s;}
+  details.cat-block[open] summary::before{transform:rotate(90deg);}
+  details.cat-block .cat-body{padding-bottom:8px;}
+
+  .summary-box{position:sticky;top:16px;background:var(--paper);border:1px solid var(--line-soft);border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;min-height:20px;}
+  .summary-box .chip{display:inline-block;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:3px 12px;font-size:12.5px;margin:3px 6px 3px 0;}
+  .cat-title{font-size:12.5px;font-weight:600;color:var(--accent-dark);text-transform:none;margin:0 0 8px;padding-bottom:6px;border-bottom:1px dashed var(--line);}
+  .item-row{display:grid;grid-template-columns:1fr 90px 100px;align-items:start;gap:12px;padding:7px 0;}
+  .item-row .name{font-size:13.5px;padding-top:6px;}
+  .item-row .unit{font-size:12px;color:var(--muted);padding-top:6px;}
+  .item-row input{padding:6px 8px;text-align:right;width:100%;}
+  .qty-cell{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+  .stock-warn{font-size:10.5px;color:var(--rust);white-space:nowrap;line-height:1.3;}
+
+  .hint{font-size:12px;color:var(--muted);line-height:1.6;margin-top:4px;}
+  .kpi-row{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
+  .kpi{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius);padding:16px 18px;}
+  .kpi .num{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;}
+  .kpi .lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  .filter-row{display:flex;gap:10px;margin-bottom:14px;align-items:center;}
+  .filter-row select{width:auto;min-width:120px;}
+  .shared-note{font-size:11.5px;color:var(--muted);background:var(--paper);border:1px solid var(--line-soft);border-radius:var(--radius);padding:8px 12px;margin-bottom:16px;}
+
+  .admin-link{
+    padding:6px 14px;font-size:12.5px;cursor:pointer;
+    position:fixed;top:14px;right:20px;z-index:40;
+    background:var(--surface);color:var(--ink);border:1px solid var(--line);
+    border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);
+  }
+  .admin-link:hover{background:var(--paper);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(33,38,31,0.55);display:flex;align-items:center;justify-content:center;z-index:100;}
+  .modal-overlay.hidden{display:none;}
+  .modal-box{background:#fff;border-radius:var(--radius);padding:26px;width:320px;box-shadow:0 8px 30px rgba(0,0,0,0.25);}
+  .modal-box h3{margin:0 0 14px;font-size:15px;}
+  .modal-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end;}
+  .modal-err{color:var(--rust);font-size:12.5px;margin-top:6px;min-height:16px;}
+
+  @media (max-width: 860px){
+    #app{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;overflow-x:auto;}
+    .brand{display:none;}
+    nav{display:flex;padding:0;}
+    .nav-item{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+    .nav-item.active{border-bottom-color:var(--accent);}
+    .sidebar-foot{display:none;}
+    .admin-link{
+      position:static;background:transparent;color:#B7BDAC;border:none;box-shadow:none;
+      border-radius:0;padding:11px 20px;border-top:1px solid rgba(255,255,255,0.12);white-space:nowrap;
+    }
+    .admin-link:hover{color:#fff;}
+    main{padding:20px;}
+    .grid2{grid-template-columns:1fr;}
+    .item-row{grid-template-columns:1fr 70px 90px;}
+  }
+</style>
 </head>
 <body>
+<div id="app">
+  <div class="sidebar">
+    <div class="brand">消耗性用品申請系統<small>Consumables Requisition</small></div>
+    <nav id="nav"></nav>
+    <div class="admin-link" id="admin-link"></div>
+  </div>
+  <main id="main"></main>
+</div>
 
-<div class="container">
-    <h2>財宏公司消耗性用品申請單</h2>
-    <div class="info-bar">如有任何疑問，請洽管理部林昆霖（分機7125）</div>
-    
-    <div class="form-group">
-        <label>申請人姓名</label>
-        <input type="text" id="userName" placeholder="請填寫全名">
+<div class="modal-overlay hidden" id="login-modal">
+  <div class="modal-box">
+    <h3>管理者登入</h3>
+    <label>密碼</label>
+    <input type="password" id="login-pw" placeholder="請輸入管理者密碼">
+    <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;color:var(--muted);">
+      <input type="checkbox" id="login-pw-toggle" style="width:auto;"> 顯示密碼
+    </label>
+    <div class="modal-err" id="login-err"></div>
+    <div class="modal-actions">
+      <button class="btn ghost small" id="login-cancel">取消</button>
+      <button class="btn primary small" id="login-submit">登入</button>
     </div>
-
-    <div class="form-group">
-        <label>所屬部門</label>
-        <select id="department">
-            <option value="">-- 請選擇部門 --</option>
-            <option value="業務部">業務部</option>
-            <option value="技術服務部">技術服務部</option>
-            <option value="資安系統部">資安系統部</option>
-            <option value="管理部">管理部</option>
-        </select>
-    </div>
-
-    <label>申請項目</label>
-    <div id="itemList">
-        <div class="item-row">
-            <select class="item-name">
-               <option value="">--請選擇文具用品--</option>
-<option value="(A01-1)裝訂膠環(8MM)（盒）">(A01-1)裝訂膠環(8MM)（盒）</option>
-<option value="(A01-2)裝訂膠環(10MM)（盒）">(A01-2)裝訂膠環(10MM)（盒）</option>
-<option value="(A02)16格雷色標籤紙（包）">(A02)16格雷色標籤紙（包）</option>
-<option value="(A03)延長線（條）">(A03)延長線（條）</option>
-<option value="(A04)投影片（包）">(A04)投影片（包）</option>
-<option value="(A05-1)長尾夾(222B)約5.1cm（盒）">(A05-1)長尾夾(222B)約5.1cm（盒）</option>
-<option value="(A05-2)長尾夾(223B)約4.1cm（盒）">(A05-2)長尾夾(223B)約4.1cm（盒）</option>
-<option value="(A05-3)長尾夾(224B)約3.2cm（盒）">(A05-3)長尾夾(224B)約3.2cm（盒）</option>
-<option value="(A05-4)長尾夾(225B)約2.5cm（盒）">(A05-4)長尾夾(225B)約2.5cm（盒）</option>
-<option value="(A05-5)長尾夾(226B)約1.9cm（盒）">(A05-5)長尾夾(226B)約1.9cm（盒）</option>
-<option value="(A05-6)長尾夾(227B)約1.5cm（盒）">(A05-6)長尾夾(227B)約1.5cm（盒）</option>
-<option value="(A06)立可帶（個）">(A06)立可帶（個）</option>
-<option value="(A07)立可內帶（個）">(A07)立可內帶（個）</option>
-<option value="(A08)標籤帶（盒）">(A08)標籤帶（盒）</option>
-<option value="(A09)膠水（支）">(A09)膠水（支）</option>
-<option value="(A10)口紅膠（支）">(A10)口紅膠（支）</option>
-<option value="(A11)釘書機（台）">(A11)釘書機（台）</option>
-<option value="(A12)訂書針（盒）">(A12)訂書針（盒）</option>
-<option value="(A13)拔釘器（個）">(A13)拔釘器（個）</option>
-<option value="(A14)迴紋針（大）（盒）">(A14)迴紋針（大）（盒）</option>
-<option value="(A15)計算機（台）">(A15)計算機（台）</option>
-<option value="(A16)剪刀（支）">(A16)剪刀（支）</option>
-<option value="(A17)打印台（個）">(A17)打印台（個）</option>
-<option value="(A18)打印水（瓶）">(A18)打印水（瓶）</option>
-<option value="(A19)美工刀（支）">(A19)美工刀（支）</option>
-<option value="(A20-1)原子筆（藍）（支）">(A20-1)原子筆（藍）（支）</option>
-<option value="(A20-2)原子筆（紅）（支）">(A20-2)原子筆（紅）（支）</option>
-<option value="(A20-3)原子筆（黑）（支）">(A20-3)原子筆（黑）（支）</option>
-<option value="(A21)Pentel水性筆（支）">(A21)Pentel水性筆（支）</option>
-<option value="(A22)Pentel筆蕊（支）">(A22)Pentel筆蕊（支）</option>
-<option value="(A23)油性簽字筆（支）">(A23)油性簽字筆（支）</option>
-<option value="(A24)鉛筆（支）">(A24)鉛筆（支）</option>
-<option value="(A25-1)螢光筆（黃色）（支）">(A25-1)螢光筆（黃色）（支）</option>
-<option value="(A25-2)螢光筆（橘色）（支）">(A25-2)螢光筆（橘色）（支）</option>
-<option value="(A25-3)螢光筆（藍色）（支）">(A25-3)螢光筆（藍色）（支）</option>
-<option value="(A25-4)螢光筆（綠色）（支）">(A25-4)螢光筆（綠色）（支）</option>
-<option value="(A26)橡皮擦（個）">(A26)橡皮擦（個）</option>
-<option value="(A27-1)電池（2號）（個）">(A27-1)電池（2號）（個）</option>
-<option value="(A27-2)電池（3號）（個）">(A27-2)電池（3號）（個）</option>
-<option value="(A27-3)電池（4號）（個）">(A27-3)電池（4號）（個）</option>
-<option value="(A28)橡皮圈（包）">(A28)橡皮圈（包）</option>
-<option value="(A29)四色螢光膠帶（個）">(A29)四色螢光膠帶（個）</option>
-<option value="(A30)自黏貼標籤（包）">(A30)自黏貼標籤（包）</option>
-<option value="(A31)抽取式標籤（包）">(A31)抽取式標籤（包）</option>
-<option value="(A32-1)便條紙（大）（個）">(A32-1)便條紙（大）（個）</option>
-<option value="(A32-2)便條紙（中）（個）">(A32-2)便條紙（中）（個）</option>
-<option value="(A32-3)便條紙（小）（個）">(A32-3)便條紙（小）（個）</option>
-<option value="(A33)尺（支）">(A33)尺（支）</option>
-<option value="(A34-1)白板筆（紅）（支）">(A34-1)白板筆（紅）（支）</option>
-<option value="(A34-2)白板筆（藍）（支）">(A34-2)白板筆（藍）（支）</option>
-<option value="(A34-3)白板筆（黑）（支）">(A34-3)白板筆（黑）（支）</option>
-<option value="(A34-4)白板筆（綠）（支）">(A34-4)白板筆（綠）（支）</option>
-<option value="(A34-5)白板筆（紫）（支）">(A34-5)白板筆（紫）（支）</option>
-<option value="(A34-6)白板筆（橘）（支）">(A34-6)白板筆（橘）（支）</option>
-<option value="(A35)白板擦（個）">(A35)白板擦（個）</option>
-<option value="(A36)泡棉膠（捲）">(A36)泡棉膠（捲）</option>
-<option value="(A37)膠帶（寬版）（捲）">(A37)膠帶（寬版）（捲）</option>
-<option value="(A37-1)膠帶（窄版）（捲）">(A37-1)膠帶（窄版）（捲）</option>
-<option value="(A38)強力膠（條）">(A38)強力膠（條）</option>
-<option value="(A41)分類紙（包）">(A41)分類紙（包）</option>
-<option value="(A42)11孔內頁袋（個）">(A42)11孔內頁袋（個）</option>
-<option value="(A45)L資料夾（個）">(A45)L資料夾（個）</option>
-<option value="(A46)彩色碳粉匣（支）">(A46)彩色碳粉匣（支）</option>
-<option value="(A48)筆筒（個）">(A48)筆筒（個）</option>
-<option value="(A51)隱形膠帶（個）">(A51)隱形膠帶（個）</option>
-<option value="(A52)識別證夾（個）">(A52)識別證夾（個）</option>
-<option value="(A53)步膠帶（捲）">(A53)步膠帶（捲）</option>
-<option value="(A54)雷色標籤紙CD專用（包）">(A54)雷色標籤紙CD專用（包）</option>
-<option value="(A55)自強夾（個）">(A55)自強夾（個）</option>
-<option value="(A56)自動鉛筆（支）">(A56)自動鉛筆（支）</option>
-<option value="(A57)CD光碟片（片）">(A57)CD光碟片（片）</option>
-<option value="(A58)DVD光碟片（片）">(A58)DVD光碟片（片）</option>
-<option value="(B01)A4影印紙（包）">(B01)A4影印紙（包）</option>
-<option value="(B02)A3影印紙（包）">(B02)A3影印紙（包）</option>
-<option value="(B03)B3影印紙（包）">(B03)B3影印紙（包）</option>
-<option value="(B04)A4影印紙（黃）（包）">(B04)A4影印紙（黃）（包）</option>
-<option value="(B05)A4影印紙（藍）（包）">(B05)A4影印紙（藍）（包）</option>
-<option value="(B06)A4影印紙（粉紅）（包）">(B06)A4影印紙（粉紅）（包）</option>
-<option value="(B07)A4影印紙（綠）（包）">(B07)A4影印紙（綠）（包）</option>
-<option value="(B08-1)信封（小）（個）">(B08-1)信封（小）（個）</option>
-<option value="(B08-2)信封（中）（個）">(B08-2)信封（中）（個）</option>
-<option value="(B08-3)信封（大）（個）">(B08-3)信封（大）（個）</option>
-<option value="(B09)擦手紙（箱）">(B09)擦手紙（箱）</option>
-<option value="(B10)小捲筒衛生紙（箱）">(B10)小捲筒衛生紙（箱）</option>
-<option value="(B11)大垃圾袋（件）">(B11)大垃圾袋（件）</option>
-<option value="(B12)洗手乳（桶）">(B12)洗手乳（桶）</option>
-<option value="(B13)洗碗精（桶）">(B13)洗碗精（桶）</option>
-<option value="(B14)紙杯（串）">(B14)紙杯（串）</option>
-            </select>
-            <input type="number" class="item-qty" placeholder="數量" min="1" value="1">
-            <button type="button" class="btn btn-remove" onclick="removeRow(this)">刪除</button>
-        </div>
-    </div>
-
-    <button type="button" class="btn btn-add" onclick="addRow()">+ 新增申請項目</button>
-    <button type="button" id="submitBtn" class="btn btn-submit" onclick="submitForm()">確認送出申請</button>
+  </div>
 </div>
 
 <script>
-    // 定義 HTML 選單內容，方便統一修改
-    const itemOptions = `
-       <option value="">--請選擇文具用品--</option>
-<option value="(A01-1)裝訂膠環(8MM)（盒）">(A01-1)裝訂膠環(8MM)（盒）</option>
-<option value="(A01-2)裝訂膠環(10MM)（盒）">(A01-2)裝訂膠環(10MM)（盒）</option>
-<option value="(A02)16格雷色標籤紙（包）">(A02)16格雷色標籤紙（包）</option>
-<option value="(A03)延長線（條）">(A03)延長線（條）</option>
-<option value="(A04)投影片（包）">(A04)投影片（包）</option>
-<option value="(A05-1)長尾夾(222B)約5.1cm（盒）">(A05-1)長尾夾(222B)約5.1cm（盒）</option>
-<option value="(A05-2)長尾夾(223B)約4.1cm（盒）">(A05-2)長尾夾(223B)約4.1cm（盒）</option>
-<option value="(A05-3)長尾夾(224B)約3.2cm（盒）">(A05-3)長尾夾(224B)約3.2cm（盒）</option>
-<option value="(A05-4)長尾夾(225B)約2.5cm（盒）">(A05-4)長尾夾(225B)約2.5cm（盒）</option>
-<option value="(A05-5)長尾夾(226B)約1.9cm（盒）">(A05-5)長尾夾(226B)約1.9cm（盒）</option>
-<option value="(A05-6)長尾夾(227B)約1.5cm（盒）">(A05-6)長尾夾(227B)約1.5cm（盒）</option>
-<option value="(A06)立可帶（個）">(A06)立可帶（個）</option>
-<option value="(A07)立可內帶（個）">(A07)立可內帶（個）</option>
-<option value="(A08)標籤帶（盒）">(A08)標籤帶（盒）</option>
-<option value="(A09)膠水（支）">(A09)膠水（支）</option>
-<option value="(A10)口紅膠（支）">(A10)口紅膠（支）</option>
-<option value="(A11)釘書機（台）">(A11)釘書機（台）</option>
-<option value="(A12)訂書針（盒）">(A12)訂書針（盒）</option>
-<option value="(A13)拔釘器（個）">(A13)拔釘器（個）</option>
-<option value="(A14)迴紋針（大）（盒）">(A14)迴紋針（大）（盒）</option>
-<option value="(A15)計算機（台）">(A15)計算機（台）</option>
-<option value="(A16)剪刀（支）">(A16)剪刀（支）</option>
-<option value="(A17)打印台（個）">(A17)打印台（個）</option>
-<option value="(A18)打印水（瓶）">(A18)打印水（瓶）</option>
-<option value="(A19)美工刀（支）">(A19)美工刀（支）</option>
-<option value="(A20-1)原子筆（藍）（支）">(A20-1)原子筆（藍）（支）</option>
-<option value="(A20-2)原子筆（紅）（支）">(A20-2)原子筆（紅）（支）</option>
-<option value="(A20-3)原子筆（黑）（支）">(A20-3)原子筆（黑）（支）</option>
-<option value="(A21)Pentel水性筆（支）">(A21)Pentel水性筆（支）</option>
-<option value="(A22)Pentel筆蕊（支）">(A22)Pentel筆蕊（支）</option>
-<option value="(A23)油性簽字筆（支）">(A23)油性簽字筆（支）</option>
-<option value="(A24)鉛筆（支）">(A24)鉛筆（支）</option>
-<option value="(A25-1)螢光筆（黃色）（支）">(A25-1)螢光筆（黃色）（支）</option>
-<option value="(A25-2)螢光筆（橘色）（支）">(A25-2)螢光筆（橘色）（支）</option>
-<option value="(A25-3)螢光筆（藍色）（支）">(A25-3)螢光筆（藍色）（支）</option>
-<option value="(A25-4)螢光筆（綠色）（支）">(A25-4)螢光筆（綠色）（支）</option>
-<option value="(A26)橡皮擦（個）">(A26)橡皮擦（個）</option>
-<option value="(A27-1)電池（2號）（個）">(A27-1)電池（2號）（個）</option>
-<option value="(A27-2)電池（3號）（個）">(A27-2)電池（3號）（個）</option>
-<option value="(A27-3)電池（4號）（個）">(A27-3)電池（4號）（個）</option>
-<option value="(A28)橡皮圈（包）">(A28)橡皮圈（包）</option>
-<option value="(A29)四色螢光膠帶（個）">(A29)四色螢光膠帶（個）</option>
-<option value="(A30)自黏貼標籤（包）">(A30)自黏貼標籤（包）</option>
-<option value="(A31)抽取式標籤（包）">(A31)抽取式標籤（包）</option>
-<option value="(A32-1)便條紙（大）（個）">(A32-1)便條紙（大）（個）</option>
-<option value="(A32-2)便條紙（中）（個）">(A32-2)便條紙（中）（個）</option>
-<option value="(A32-3)便條紙（小）（個）">(A32-3)便條紙（小）（個）</option>
-<option value="(A33)尺（支）">(A33)尺（支）</option>
-<option value="(A34-1)白板筆（紅）（支）">(A34-1)白板筆（紅）（支）</option>
-<option value="(A34-2)白板筆（藍）（支）">(A34-2)白板筆（藍）（支）</option>
-<option value="(A34-3)白板筆（黑）（支）">(A34-3)白板筆（黑）（支）</option>
-<option value="(A34-4)白板筆（綠）（支）">(A34-4)白板筆（綠）（支）</option>
-<option value="(A34-5)白板筆（紫）（支）">(A34-5)白板筆（紫）（支）</option>
-<option value="(A34-6)白板筆（橘）（支）">(A34-6)白板筆（橘）（支）</option>
-<option value="(A35)白板擦（個）">(A35)白板擦（個）</option>
-<option value="(A36)泡棉膠（捲）">(A36)泡棉膠（捲）</option>
-<option value="(A37)膠帶（寬版）（捲）">(A37)膠帶（寬版）（捲）</option>
-<option value="(A37-1)膠帶（窄版）（捲）">(A37-1)膠帶（窄版）（捲）</option>
-<option value="(A38)強力膠（條）">(A38)強力膠（條）</option>
-<option value="(A41)分類紙（包）">(A41)分類紙（包）</option>
-<option value="(A42)11孔內頁袋（個）">(A42)11孔內頁袋（個）</option>
-<option value="(A45)L資料夾（個）">(A45)L資料夾（個）</option>
-<option value="(A46)彩色碳粉匣（支）">(A46)彩色碳粉匣（支）</option>
-<option value="(A48)筆筒（個）">(A48)筆筒（個）</option>
-<option value="(A51)隱形膠帶（個）">(A51)隱形膠帶（個）</option>
-<option value="(A52)識別證夾（個）">(A52)識別證夾（個）</option>
-<option value="(A53)步膠帶（捲）">(A53)步膠帶（捲）</option>
-<option value="(A54)雷色標籤紙CD專用（包）">(A54)雷色標籤紙CD專用（包）</option>
-<option value="(A55)自強夾（個）">(A55)自強夾（個）</option>
-<option value="(A56)自動鉛筆（支）">(A56)自動鉛筆（支）</option>
-<option value="(A57)CD光碟片（片）">(A57)CD光碟片（片）</option>
-<option value="(A58)DVD光碟片（片）">(A58)DVD光碟片（片）</option>
-<option value="(B01)A4影印紙（包）">(B01)A4影印紙（包）</option>
-<option value="(B02)A3影印紙（包）">(B02)A3影印紙（包）</option>
-<option value="(B03)B3影印紙（包）">(B03)B3影印紙（包）</option>
-<option value="(B04)A4影印紙（黃）（包）">(B04)A4影印紙（黃）（包）</option>
-<option value="(B05)A4影印紙（藍）（包）">(B05)A4影印紙（藍）（包）</option>
-<option value="(B06)A4影印紙（粉紅）（包）">(B06)A4影印紙（粉紅）（包）</option>
-<option value="(B07)A4影印紙（綠）（包）">(B07)A4影印紙（綠）（包）</option>
-<option value="(B08-1)信封（小）（個）">(B08-1)信封（小）（個）</option>
-<option value="(B08-2)信封（中）（個）">(B08-2)信封（中）（個）</option>
-<option value="(B08-3)信封（大）（個）">(B08-3)信封（大）（個）</option>
-<option value="(B09)擦手紙（箱）">(B09)擦手紙（箱）</option>
-<option value="(B10)小捲筒衛生紙（箱）">(B10)小捲筒衛生紙（箱）</option>
-<option value="(B11)大垃圾袋（件）">(B11)大垃圾袋（件）</option>
-<option value="(B12)洗手乳（桶）">(B12)洗手乳（桶）</option>
-<option value="(B13)洗碗精（桶）">(B13)洗碗精（桶）</option>
-<option value="(B14)紙杯（串）">(B14)紙杯（串）</option>    `;
+/* ---------------- storage helpers ---------------- */
+async function sGet(key, shared=true){
+  try{ const r = await window.storage.get(key, shared); return r ? r.value : null; }
+  catch(e){ return null; }
+}
+async function sSet(key, value, shared=true){
+  try{ return await window.storage.set(key, value, shared); }
+  catch(e){ console.error('storage set failed', key, e); return null; }
+}
+async function sList(prefix, shared=true){
+  try{ const r = await window.storage.list(prefix, shared); return r ? r.keys : []; }
+  catch(e){ return []; }
+}
+async function sDelete(key, shared=true){
+  try{ return await window.storage.delete(key, shared); }
+  catch(e){ return null; }
+}
 
-    function addRow() {
-        const itemList = document.getElementById('itemList');
-        const newRow = document.createElement('div');
-        newRow.className = 'item-row';
-        newRow.innerHTML = `
-            <select class="item-name">${itemOptions}</select>
-            <input type="number" class="item-qty" placeholder="數量" min="1" value="1">
-            <button type="button" class="btn btn-remove" onclick="removeRow(this)">刪除</button>
+/* ---------------- Google Sheet API (optional cloud backend) ---------------- */
+let SHEET_API_URL = null;
+const DEFAULT_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbwdH2Gt72Rq6UUsFtQIqBUFDkoyUWkIo0Zr5CEPc3c07dEV05hJN8UHlJQhiq5nKJg-HQ/exec';
+async function apiGet(action){
+  if(!SHEET_API_URL) return null;
+  try{
+    const res = await fetch(`${SHEET_API_URL}?action=${action}`);
+    return await res.json();
+  }catch(e){ console.error('apiGet failed', e); return null; }
+}
+async function apiPost(action, payload){
+  if(!SHEET_API_URL) return null;
+  try{
+    const res = await fetch(SHEET_API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action, ...payload }),
+    });
+    return await res.json();
+  }catch(e){ console.error('apiPost failed', e); return null; }
+}
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmtTs(ts){
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function toast(msg, kind=''){
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' '+kind : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 4500);
+}
+
+function exportWorkbook(filename, sheets){
+  if(typeof XLSX === 'undefined'){ toast('Excel匯出元件載入失敗，請檢查網路連線後重新整理', 'err'); return; }
+  try{
+    const wb = XLSX.utils.book_new();
+    sheets.forEach(s=>{
+      const ws = XLSX.utils.aoa_to_sheet(s.rows);
+      XLSX.utils.book_append_sheet(wb, ws, s.name);
+    });
+    XLSX.writeFile(wb, filename);
+    toast('已匯出 ' + filename, 'ok');
+  }catch(e){
+    console.error('export failed', e);
+    toast('匯出失敗，請稍後再試', 'err');
+  }
+}
+function todayStr(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`;
+}
+
+/* ---------------- default seed data ---------------- */
+const DEFAULT_ITEMS = [
+  {id:'itm-a4paper', code:'', name:'A4影印紙', unit:'箱', category:'文具', low:5, opening:0},
+  {id:'itm-penblk', code:'', name:'原子筆-黑', unit:'支', category:'文具', low:20, opening:0},
+  {id:'itm-notes', code:'', name:'便利貼', unit:'本', category:'文具', low:10, opening:0},
+  {id:'itm-clip', code:'', name:'迴紋針', unit:'盒', category:'文具', low:10, opening:0},
+  {id:'itm-folder', code:'', name:'L型文件夾', unit:'個', category:'文具', low:15, opening:0},
+  {id:'itm-toner', code:'', name:'印表機碳粉匣-黑', unit:'顆', category:'辦公設備耗材', low:3, opening:0},
+  {id:'itm-batt', code:'', name:'電池3號', unit:'顆', category:'辦公設備耗材', low:20, opening:0},
+  {id:'itm-trash', code:'', name:'垃圾袋(大)', unit:'捆', category:'清潔用品', low:5, opening:0},
+  {id:'itm-soap', code:'', name:'洗手乳', unit:'瓶', category:'清潔用品', low:5, opening:0},
+  {id:'itm-tissue', code:'', name:'抽取式衛生紙', unit:'箱', category:'清潔用品', low:5, opening:0},
+  {id:'itm-filter', code:'', name:'咖啡濾紙', unit:'包', category:'茶水間', low:5, opening:0},
+  {id:'itm-cup', code:'', name:'紙杯', unit:'包', category:'茶水間', low:5, opening:0},
+];
+
+/* ---------------- state ---------------- */
+const DEFAULT_ADMIN_PASSWORD = 'admin1234';
+
+let state = {
+  tab: 'request',
+  items: [],
+  requests: [],
+  purchases: [],
+  suppliers: [],
+  adjustments: [],
+  config: { notifyEmail:'', adminPassword:'' },
+  loaded: false,
+  isAdmin: false,
+};
+
+const TABS = [
+  {id:'request', label:'提出申請', admin:false},
+  {id:'requestList', label:'申請總表', admin:true},
+  {id:'purchase', label:'進貨作業', admin:true},
+  {id:'stock', label:'庫存總表', admin:true},
+  {id:'itemAdmin', label:'品項設定', admin:true},
+  {id:'supplierAdmin', label:'供應商管理', admin:true},
+  {id:'analytics', label:'分析管理', admin:true},
+  {id:'settings', label:'系統設定', admin:true},
+];
+
+/* ---------------- data loading ---------------- */
+async function loadAll(){
+  const savedUrl = await sGet('sheetApiUrl', true);
+  SHEET_API_URL = savedUrl || DEFAULT_SHEET_API_URL;
+
+  if(SHEET_API_URL){
+    const res = await apiGet('getAll');
+    if(res && res.ok){
+      state.items = (res.items||[]).map(i=>({...i, low:Number(i.low)||0}));
+      state.requests = (res.requests||[]).map(r=>({...r, ts:Number(r.ts)})).sort((a,b)=>b.ts-a.ts);
+      state.purchases = (res.purchases||[]).map(p=>({...p, ts:Number(p.ts), qty:Number(p.qty)||0, unitPrice:Number(p.unitPrice)||0})).sort((a,b)=>b.ts-a.ts);
+      state.suppliers = res.suppliers || [];
+      state.adjustments = (res.adjustments||[]).map(a=>({...a, ts:Number(a.ts), delta:Number(a.delta)||0, countedQty:Number(a.countedQty)||0})).sort((a,b)=>b.ts-a.ts);
+      state.config = { notifyEmail:'', adminPassword:'', ...(res.config||{}) };
+
+      if(state.items.length === 0){
+        await apiPost('batchAddItems', { data: DEFAULT_ITEMS });
+        state.items = DEFAULT_ITEMS.slice();
+      }
+      state.loaded = true;
+      return;
+    }
+    toast('無法連線到Google試算表，暫時改用本機資料', 'err');
+  }
+
+  // ---- fallback: local (Claude storage) mode ----
+  let items = await sGet('items');
+  if(!items){
+    await sSet('items', JSON.stringify(DEFAULT_ITEMS));
+    items = JSON.stringify(DEFAULT_ITEMS);
+  }
+  state.items = JSON.parse(items);
+
+  const reqKeys = await sList('req:');
+  const reqs = [];
+  for(const k of reqKeys){
+    const v = await sGet(k);
+    if(v){ try{ reqs.push(JSON.parse(v)); }catch(e){} }
+  }
+  reqs.sort((a,b)=> b.ts - a.ts);
+  state.requests = reqs;
+
+  const purKeys = await sList('pur:');
+  const purs = [];
+  for(const k of purKeys){
+    const v = await sGet(k);
+    if(v){ try{ purs.push(JSON.parse(v)); }catch(e){} }
+  }
+  purs.sort((a,b)=> b.ts - a.ts);
+  state.purchases = purs;
+
+  let suppliers = await sGet('suppliers');
+  if(!suppliers){ suppliers = '[]'; await sSet('suppliers', suppliers); }
+  state.suppliers = JSON.parse(suppliers);
+
+  const adjKeys = await sList('adj:');
+  const adjs = [];
+  for(const k of adjKeys){
+    const v = await sGet(k);
+    if(v){ try{ adjs.push(JSON.parse(v)); }catch(e){} }
+  }
+  adjs.sort((a,b)=> b.ts - a.ts);
+  state.adjustments = adjs;
+
+  const cfg = await sGet('config');
+  if(cfg){ try{ state.config = { ...state.config, ...JSON.parse(cfg) }; }catch(e){} }
+
+  state.loaded = true;
+}
+
+/* ---------------- inventory calc ---------------- */
+function computeStock(){
+  const map = {};
+  for(const it of state.items){
+    map[it.id] = { item: it, purchased: 0, approvedReq: 0, adjusted: 0, costNum: 0, costDen: 0 };
+  }
+  for(const p of state.purchases){
+    const row = map[p.itemId];
+    if(!row) continue;
+    row.purchased += Number(p.qty)||0;
+    if(Number(p.unitPrice) > 0){
+      row.costNum += Number(p.qty) * Number(p.unitPrice);
+      row.costDen += Number(p.qty);
+    }
+  }
+  for(const r of state.requests){
+    if(r.status !== 'approved') continue;
+    for(const line of r.items){
+      if(map[line.itemId]) map[line.itemId].approvedReq += Number(line.qty)||0;
+    }
+  }
+  for(const a of state.adjustments){
+    if(map[a.itemId]) map[a.itemId].adjusted += Number(a.delta)||0;
+  }
+  return Object.values(map).map(row => {
+    const opening = Number(row.item.opening)||0;
+    const stock = opening + row.purchased - row.approvedReq + row.adjusted;
+    const avgCost = row.costDen > 0 ? row.costNum / row.costDen : 0;
+    return { ...row, opening, stock, avgCost, value: stock * avgCost };
+  });
+}
+
+/* ---------------- stock adjustment (盤點) ---------------- */
+function computeCurrentStockFor(itemId){
+  const rows = computeStock();
+  const row = rows.find(r=>r.item.id === itemId);
+  return row ? row.stock : 0;
+}
+
+/* ---------------- render root ---------------- */
+function renderNav(){
+  const nav = document.getElementById('nav');
+  const visible = TABS.filter(t => !t.admin || state.isAdmin);
+  nav.innerHTML = visible.map(t => `
+    <div class="nav-item ${state.tab===t.id?'active':''}" data-tab="${t.id}">
+      <span class="dot"></span>${t.label}
+    </div>
+  `).join('');
+  nav.querySelectorAll('.nav-item').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.tab = el.dataset.tab; render(); });
+  });
+
+  const adminLink = document.getElementById('admin-link');
+  adminLink.textContent = state.isAdmin ? '登出管理者模式' : '管理者登入';
+  adminLink.onclick = () => {
+    if(state.isAdmin){
+      state.isAdmin = false;
+      state.tab = 'request';
+      render();
+    } else {
+      openLoginModal();
+    }
+  };
+}
+
+function openLoginModal(){
+  const modal = document.getElementById('login-modal');
+  const pwInput = document.getElementById('login-pw');
+  const pwToggle = document.getElementById('login-pw-toggle');
+  const err = document.getElementById('login-err');
+  pwInput.value = '';
+  pwInput.type = 'password';
+  pwToggle.checked = false;
+  err.textContent = '';
+  modal.classList.remove('hidden');
+  pwInput.focus();
+
+  pwToggle.onchange = () => { pwInput.type = pwToggle.checked ? 'text' : 'password'; };
+
+  const doLogin = () => {
+    const expected = state.config.adminPassword || DEFAULT_ADMIN_PASSWORD;
+    if(pwInput.value === expected){
+      state.isAdmin = true;
+      modal.classList.add('hidden');
+      state.tab = 'requestList';
+      render();
+    } else {
+      err.textContent = '密碼錯誤，請再試一次';
+    }
+  };
+  document.getElementById('login-submit').onclick = doLogin;
+  pwInput.onkeydown = (e) => { if(e.key === 'Enter') doLogin(); };
+  document.getElementById('login-cancel').onclick = () => modal.classList.add('hidden');
+}
+
+function render(){
+  if(!state.isAdmin && state.tab !== 'request') state.tab = 'request';
+  renderNav();
+  const main = document.getElementById('main');
+  if(!state.loaded){ main.innerHTML = `<div class="empty">載入中...</div>`; return; }
+  switch(state.tab){
+    case 'request': main.innerHTML = viewRequestForm(); bindRequestForm(); break;
+    case 'requestList': main.innerHTML = viewRequestList(); bindRequestList(); break;
+    case 'purchase': main.innerHTML = viewPurchase(); bindPurchase(); break;
+    case 'stock': { const rows = computeStock(); main.innerHTML = viewStock(rows); bindStock(rows); break; }
+    case 'itemAdmin': main.innerHTML = viewItemAdmin(); bindItemAdmin(); break;
+    case 'supplierAdmin': main.innerHTML = viewSupplierAdmin(); bindSupplierAdmin(); break;
+    case 'analytics': main.innerHTML = viewAnalytics(); bindAnalytics(); break;
+    case 'settings': main.innerHTML = viewSettings(); bindSettings(); break;
+  }
+}
+
+/* ================= 提出申請 ================= */
+function groupByCategory(items){
+  const g = {};
+  for(const it of items){ (g[it.category] ||= []).push(it); }
+  Object.values(g).forEach(list=>{
+    list.sort((a,b)=> (a.code||'').localeCompare(b.code||'', undefined, {numeric:true}) || a.name.localeCompare(b.name));
+  });
+  return g;
+}
+
+function viewRequestForm(){
+  const groups = groupByCategory(state.items);
+  const categories = Object.keys(groups);
+  const catOptions = categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  const stockMap = {};
+  computeStock().forEach(r=>{ stockMap[r.item.id] = r.stock; });
+
+  const catBlocks = Object.entries(groups).map(([cat, list])=>`
+    <details class="cat-block" data-category="${esc(cat)}" open>
+      <summary class="cat-title">${esc(cat)}（${list.length}項）</summary>
+      <div class="cat-body">
+        ${list.map(it=>`
+          <div class="item-row" data-name="${esc(((it.code?it.code+' ':'')+it.name).toLowerCase())}">
+            <div class="name">${it.code ? `<span class="mono" style="color:var(--muted);font-size:11px;margin-right:6px;">${esc(it.code)}</span>` : ''}${esc(it.name)}</div>
+            <div class="unit">${esc(it.unit)}</div>
+            <div class="qty-cell">
+              <input type="number" min="0" step="1" value="0" class="mono qty-input" data-item="${it.id}" data-stock="${stockMap[it.id] ?? 0}">
+              <span class="stock-warn" id="warn-${it.id}"></span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+  `).join('');
+
+  return `
+    <div class="page-head">
+      <h1>消耗性用品申請</h1>
+      <p>選擇需要的品項與數量，填寫申請人資訊後送出。送出後將記錄於申請總表，並寄送通知信。</p>
+    </div>
+    <div class="panel">
+      <h2>申請人資訊</h2>
+      <div class="grid2">
+        <div class="field"><label>姓名 *</label><input type="text" id="f-applicant" placeholder="王小明"></div>
+        <div class="field"><label>部門 *</label>
+          <select id="f-dept">
+            <option value="">請選擇部門</option>
+            <option value="管理部">管理部</option>
+            <option value="業務部">業務部</option>
+            <option value="技術服務部">技術服務部</option>
+            <option value="資安系統部">資安系統部</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>選擇申請項目</h2>
+      <div class="toolbar-row">
+        <input type="text" id="item-search" placeholder="搜尋品項名稱...">
+        <select id="cat-filter">
+          <option value="all">全部分類</option>
+          ${catOptions}
+        </select>
+      </div>
+      <div class="summary-box" id="selected-summary">
+        <span class="hint" style="margin:0;">尚未選擇任何項目</span>
+      </div>
+      ${catBlocks || '<div class="empty">尚無可申請品項，請至「品項設定」新增。</div>'}
+    </div>
+    <div class="panel">
+      <h2>備註</h2>
+      <textarea id="f-note" placeholder="其他說明（選填）"></textarea>
+    </div>
+    <button class="btn primary" id="submit-request">送出申請</button>
+  `;
+}
+
+function updateSelectedSummary(){
+  const el = document.getElementById('selected-summary');
+  if(!el) return;
+  const selected = [];
+  document.querySelectorAll('.qty-input').forEach(inp=>{
+    const qty = Number(inp.value)||0;
+    if(qty>0){
+      const item = state.items.find(i=>i.id===inp.dataset.item);
+      if(item) selected.push({ name:item.name, unit:item.unit, qty });
+    }
+  });
+  if(selected.length===0){
+    el.innerHTML = '<span class="hint" style="margin:0;">尚未選擇任何項目</span>';
+    return;
+  }
+  el.innerHTML = `<strong style="font-size:12.5px;">已選 ${selected.length} 項：</strong> ` +
+    selected.map(s=>`<span class="chip">${esc(s.name)} x ${s.qty}${esc(s.unit)}</span>`).join('');
+}
+
+function applyItemFilter(){
+  const q = (document.getElementById('item-search').value || '').trim().toLowerCase();
+  const cat = document.getElementById('cat-filter').value;
+  document.querySelectorAll('details.cat-block').forEach(block=>{
+    const blockCat = block.dataset.category;
+    const catMatches = cat === 'all' || cat === blockCat;
+    let anyVisible = false;
+    block.querySelectorAll('.item-row').forEach(row=>{
+      const show = catMatches && (!q || row.dataset.name.includes(q));
+      row.style.display = show ? '' : 'none';
+      if(show) anyVisible = true;
+    });
+    block.style.display = anyVisible ? '' : 'none';
+    if(q && anyVisible) block.open = true;
+  });
+}
+
+function checkStockWarning(inp){
+  const warnEl = document.getElementById('warn-'+inp.dataset.item);
+  if(!warnEl) return;
+  const qty = Number(inp.value)||0;
+  const stock = Number(inp.dataset.stock)||0;
+  if(qty > 0 && qty > stock){
+    warnEl.textContent = `庫存不足（現有${stock}）`;
+  } else {
+    warnEl.textContent = '';
+  }
+}
+
+function bindRequestForm(){
+  document.getElementById('item-search').addEventListener('input', applyItemFilter);
+  document.getElementById('cat-filter').addEventListener('change', applyItemFilter);
+  document.querySelectorAll('.qty-input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ updateSelectedSummary(); checkStockWarning(inp); });
+  });
+
+  document.getElementById('submit-request').addEventListener('click', async ()=>{
+    const applicant = document.getElementById('f-applicant').value.trim();
+    const dept = document.getElementById('f-dept').value;
+    const note = document.getElementById('f-note').value.trim();
+    if(!applicant){ toast('請填寫申請人姓名', 'err'); return; }
+    if(!dept){ toast('請選擇部門', 'err'); return; }
+
+    const lines = [];
+    document.querySelectorAll('.qty-input').forEach(inp=>{
+      const qty = Number(inp.value)||0;
+      if(qty > 0){
+        const item = state.items.find(i=>i.id===inp.dataset.item);
+        if(item) lines.push({ itemId:item.id, name:item.name, unit:item.unit, qty });
+      }
+    });
+    if(lines.length===0){ toast('請至少選擇一項數量大於 0 的品項', 'err'); return; }
+
+    const btn = document.getElementById('submit-request');
+    btn.disabled = true; btn.textContent = '送出中...';
+
+    const record = {
+      id: uid(), ts: Date.now(), applicant, dept, note,
+      items: lines, status: 'pending',
+    };
+
+    let saved = false;
+    let mailSent = false;
+    let cloudMode = !!SHEET_API_URL;
+    if(SHEET_API_URL){
+      const res = await apiPost('addRequest', { data: record });
+      saved = !!(res && res.ok);
+      mailSent = !!(res && res.mailSent);
+    } else {
+      saved = await sSet('req:'+record.id, JSON.stringify(record));
+    }
+    if(!saved){
+      toast('儲存失敗，請稍後再試', 'err');
+      btn.disabled = false; btn.textContent = '送出申請';
+      return;
+    }
+    state.requests.unshift(record);
+
+    btn.disabled = false; btn.textContent = '送出申請';
+    document.getElementById('f-applicant').value='';
+    document.getElementById('f-dept').value='';
+    document.getElementById('f-note').value='';
+    document.querySelectorAll('.qty-input').forEach(i=>{ i.value=0; checkStockWarning(i); });
+    updateSelectedSummary();
+
+    if(!cloudMode){
+      toast('申請已送出（本機模式暫不支援自動寄信，請先連接Google試算表）', 'ok');
+    } else if(mailSent){
+      toast('申請已送出，通知信已寄出', 'ok');
+    } else if(!state.config.notifyEmail){
+      toast('申請已送出（尚未設定通知信箱，請至「系統設定」填寫）', 'ok');
+    } else {
+      toast('申請已送出，但Email通知寄送失敗，請檢查系統設定與Apps Script部署', 'err');
+    }
+  });
+}
+
+/* ================= 申請總表 ================= */
+function statusLabel(s){
+  return { pending:'待審核', approved:'已核准', rejected:'已拒絕' }[s] || s;
+}
+function statusBadge(s){
+  const clsMap = { pending:'pending', approved:'approved', rejected:'rejected' };
+  return `<span class="badge ${clsMap[s]||'pending'}">${statusLabel(s)}</span>`;
+}
+
+function viewRequestList(){
+  const rows = state.requests;
+  const pending = rows.filter(r=>r.status==='pending').length;
+  const approved = rows.filter(r=>r.status==='approved').length;
+  return `
+    <div class="page-head">
+      <h1>申請總表</h1>
+      <p>所有同仁送出的耗材申請紀錄。核准後將自動從庫存扣除對應數量。</p>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="num mono">${rows.length}</div><div class="lbl">總申請筆數</div></div>
+      <div class="kpi"><div class="num mono">${pending}</div><div class="lbl">待審核</div></div>
+      <div class="kpi"><div class="num mono">${approved}</div><div class="lbl">已核准</div></div>
+    </div>
+    <div class="panel">
+      <div class="filter-row" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <label style="margin:0;">狀態</label>
+          <select id="filter-status">
+            <option value="all">全部</option>
+            <option value="pending">待審核</option>
+            <option value="approved">已核准</option>
+            <option value="rejected">已拒絕</option>
+          </select>
+          <label style="margin:0;">起始日期</label>
+          <input type="date" id="filter-start" style="width:auto;">
+          <label style="margin:0;">結束日期</label>
+          <input type="date" id="filter-end" style="width:auto;">
+        </div>
+        <button class="btn ghost small" id="export-requests">匯出Excel</button>
+      </div>
+      <div id="req-table"></div>
+    </div>
+  `;
+}
+
+function getFilteredRequests(){
+  const filter = document.getElementById('filter-status').value;
+  const startVal = document.getElementById('filter-start').value;
+  const endVal = document.getElementById('filter-end').value;
+  const startTs = startVal ? new Date(startVal+'T00:00:00').getTime() : null;
+  const endTs = endVal ? new Date(endVal+'T23:59:59').getTime() : null;
+  return state.requests.filter(r=>{
+    if(filter !== 'all' && r.status !== filter) return false;
+    if(startTs !== null && r.ts < startTs) return false;
+    if(endTs !== null && r.ts > endTs) return false;
+    return true;
+  });
+}
+
+function renderReqTable(){
+  const rows = getFilteredRequests();
+  const el = document.getElementById('req-table');
+  if(rows.length===0){ el.innerHTML = '<div class="empty">尚無符合條件的申請紀錄</div>'; return; }
+  el.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>時間</th><th>申請人</th><th>部門</th><th>項目明細</th><th>備註</th><th>狀態</th><th>操作</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td class="mono">${fmtTs(r.ts)}</td>
+            <td>${esc(r.applicant)}</td>
+            <td>${esc(r.dept||'-')}</td>
+            <td>${r.items.map(l=>`${esc(l.name)} x ${l.qty}${esc(l.unit)}`).join('<br>')}</td>
+            <td>${esc(r.note||'-')}</td>
+            <td>${statusBadge(r.status)}</td>
+            <td>
+              ${r.status==='pending' ? `
+                <button class="btn small teal-o" data-act="approve" data-id="${r.id}">核准</button>
+                <button class="btn small danger-o" data-act="reject" data-id="${r.id}">拒絕</button>
+              ` : `<button class="btn small ghost" data-act="reset" data-id="${r.id}">改為待審核</button>`}
+              <button class="btn small danger-o" data-act="delete" data-id="${r.id}">刪除</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  el.querySelectorAll('button[data-act]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      const act = btn.dataset.act;
+      const rec = state.requests.find(r=>r.id===id);
+      if(!rec) return;
+
+      if(act === 'delete'){
+        if(!confirm(`確定要刪除 ${rec.applicant} 的這筆申請紀錄嗎？刪除後無法復原，且會一併從庫存計算中移除。`)) return;
+        state.requests = state.requests.filter(r=>r.id!==id);
+        if(SHEET_API_URL){ await apiPost('deleteRequest', { id }); }
+        else { await sDelete('req:'+id); }
+        toast('申請紀錄已刪除', 'ok');
+        renderReqTable();
+        return;
+      }
+
+      const newStatus = act==='approve' ? 'approved' : act==='reject' ? 'rejected' : 'pending';
+      rec.status = newStatus;
+      if(SHEET_API_URL){ await apiPost('updateRequestStatus', { id, status: newStatus }); }
+      else { await sSet('req:'+id, JSON.stringify(rec)); }
+      toast('狀態已更新', 'ok');
+      renderReqTable();
+    });
+  });
+}
+
+function bindRequestList(){
+  renderReqTable();
+  document.getElementById('filter-status').addEventListener('change', renderReqTable);
+  document.getElementById('filter-start').addEventListener('change', renderReqTable);
+  document.getElementById('filter-end').addEventListener('change', renderReqTable);
+  document.getElementById('export-requests').addEventListener('click', ()=>{
+    const rows = getFilteredRequests();
+    if(rows.length===0){ toast('目前沒有可匯出的資料', 'err'); return; }
+    const detail = [['日期','申請人','部門','品項','數量','單位','狀態','備註']];
+    rows.forEach(r=>{
+      r.items.forEach(l=>{
+        detail.push([fmtTs(r.ts), r.applicant, r.dept||'', l.name, l.qty, l.unit, statusLabel(r.status), r.note||'']);
+      });
+    });
+    const summary = [['日期','申請人','部門','項目明細','備註','狀態']];
+    rows.forEach(r=>{
+      summary.push([fmtTs(r.ts), r.applicant, r.dept||'', r.items.map(l=>`${l.name} x ${l.qty}${l.unit}`).join('; '), r.note||'', statusLabel(r.status)]);
+    });
+    exportWorkbook(`申請總表_${todayStr()}.xlsx`, [
+      { name:'申請明細', rows: detail },
+      { name:'申請單彙總', rows: summary },
+    ]);
+  });
+}
+
+/* ================= 進貨作業 ================= */
+function viewPurchase(){
+  const options = state.items.map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(i.unit)})</option>`).join('');
+  const totalValue = state.purchases.reduce((s,p)=> s + (Number(p.qty)||0)*(Number(p.unitPrice)||0), 0);
+  return `
+    <div class="page-head">
+      <h1>進貨作業</h1>
+      <p>登記新到貨的耗材，系統會自動累計進貨總表並更新庫存總表。</p>
+    </div>
+    <div class="panel">
+      <h2>新增進貨紀錄</h2>
+      <div class="grid2">
+        <div class="field"><label>品項 *</label><select id="p-item">${options}</select></div>
+        <div class="field"><label>數量 *</label><input type="number" min="1" step="1" id="p-qty" value="1"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>單價（選填）</label><input type="number" min="0" step="0.1" id="p-price" placeholder="0"></div>
+        <div class="field">
+          <label>供應商（選填）</label>
+          <select id="p-supplier-select">
+            <option value="">— 未選擇 —</option>
+            ${state.suppliers.map(s=>`<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('')}
+            <option value="__other__">其他（手動輸入）</option>
+          </select>
+          <input type="text" id="p-supplier-other" placeholder="輸入供應商名稱" style="margin-top:8px;display:none;">
+        </div>
+      </div>
+      <div class="field"><label>備註</label><input type="text" id="p-note" placeholder="選填"></div>
+      <button class="btn primary" id="submit-purchase">新增進貨</button>
+    </div>
+    <div class="panel">
+      <h2>批次匯入進貨紀錄</h2>
+      <p class="hint" style="margin-top:0;">
+        從 Excel／CSV 匯入多筆進貨。檔案需含表頭：<span class="mono">品項名稱、數量、單價、供應商、備註</span>，品項名稱需與「品項設定」中的名稱完全相同，否則該筆會被略過。
+      </p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="btn ghost small" id="download-purchase-template">下載匯入範本</button>
+        <input type="file" id="import-purchase-file" accept=".xlsx,.xls,.csv" style="max-width:260px;">
+        <button class="btn primary small" id="import-purchases" disabled>確認匯入</button>
+      </div>
+      <div id="import-purchase-preview"></div>
+    </div>
+    <div class="panel">
+      <h2>進貨總表</h2>
+      <div class="kpi-row" style="margin-bottom:14px;">
+        <div class="kpi"><div class="num mono">${state.purchases.length}</div><div class="lbl">進貨筆數</div></div>
+        <div class="kpi"><div class="num mono">$${totalValue.toLocaleString()}</div><div class="lbl">累計進貨金額</div></div>
+      </div>
+      <div class="filter-row" style="justify-content:flex-end;">
+        <button class="btn ghost small" id="export-purchases">匯出Excel</button>
+      </div>
+      <div id="pur-table"></div>
+    </div>
+  `;
+}
+
+function renderPurTable(){
+  const el = document.getElementById('pur-table');
+  if(state.purchases.length===0){ el.innerHTML = '<div class="empty">尚無進貨紀錄</div>'; return; }
+  el.innerHTML = `
+    <table>
+      <thead><tr><th>時間</th><th>品項</th><th>數量</th><th>單價</th><th>小計</th><th>供應商</th><th>備註</th><th>操作</th></tr></thead>
+      <tbody>
+        ${state.purchases.map(p=>`
+          <tr>
+            <td class="mono">${fmtTs(p.ts)}</td>
+            <td>${esc(p.itemName)}</td>
+            <td class="mono">${p.qty}${esc(p.unit)}</td>
+            <td class="mono">${p.unitPrice ? '$'+Number(p.unitPrice).toLocaleString() : '-'}</td>
+            <td class="mono">${p.unitPrice ? '$'+(p.qty*p.unitPrice).toLocaleString() : '-'}</td>
+            <td>${esc(p.supplier||'-')}</td>
+            <td>${esc(p.note||'-')}</td>
+            <td><button class="btn small danger-o" data-del-pur="${p.id}">刪除</button></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  el.querySelectorAll('button[data-del-pur]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.delPur;
+      const rec = state.purchases.find(p=>p.id===id);
+      if(!rec) return;
+      if(!confirm(`確定要刪除這筆「${rec.itemName}」的進貨紀錄嗎？刪除後庫存計算會跟著減少，且無法復原。`)) return;
+      state.purchases = state.purchases.filter(p=>p.id!==id);
+      if(SHEET_API_URL){ await apiPost('deletePurchase', { id }); }
+      else { await sDelete('pur:'+id); }
+      toast('進貨紀錄已刪除', 'ok');
+      renderPurTable();
+    });
+  });
+}
+
+function bindPurchase(){
+  renderPurTable();
+  const supSelect = document.getElementById('p-supplier-select');
+  const supOther = document.getElementById('p-supplier-other');
+  supSelect.addEventListener('change', ()=>{
+    supOther.style.display = supSelect.value === '__other__' ? '' : 'none';
+    if(supSelect.value !== '__other__') supOther.value = '';
+  });
+  document.getElementById('export-purchases').addEventListener('click', ()=>{
+    if(state.purchases.length===0){ toast('目前沒有可匯出的資料', 'err'); return; }
+    const rows = [['時間','品項','數量','單位','單價','小計','供應商','備註']];
+    state.purchases.forEach(p=>{
+      rows.push([fmtTs(p.ts), p.itemName, p.qty, p.unit, p.unitPrice||0, (p.qty*(p.unitPrice||0)), p.supplier||'', p.note||'']);
+    });
+    exportWorkbook(`進貨總表_${todayStr()}.xlsx`, [{ name:'進貨總表', rows }]);
+  });
+  document.getElementById('submit-purchase').addEventListener('click', async ()=>{
+    const itemId = document.getElementById('p-item').value;
+    const qty = Number(document.getElementById('p-qty').value)||0;
+    const unitPrice = Number(document.getElementById('p-price').value)||0;
+    const supplier = supSelect.value === '__other__' ? supOther.value.trim() : supSelect.value;
+    const note = document.getElementById('p-note').value.trim();
+    if(qty<=0){ toast('數量需大於 0', 'err'); return; }
+    const item = state.items.find(i=>i.id===itemId);
+    if(!item) return;
+    const record = { id: uid(), ts: Date.now(), itemId, itemName:item.name, unit:item.unit, qty, unitPrice, supplier, note };
+    let saved;
+    if(SHEET_API_URL){
+      const res = await apiPost('addPurchase', { data: record });
+      saved = !!(res && res.ok);
+    } else {
+      saved = await sSet('pur:'+record.id, JSON.stringify(record));
+    }
+    if(!saved){ toast('儲存失敗，請稍後再試', 'err'); return; }
+    state.purchases.unshift(record);
+    toast('進貨紀錄已新增', 'ok');
+    render();
+    state.tab = 'purchase';
+  });
+
+  document.getElementById('download-purchase-template').addEventListener('click', ()=>{
+    const sampleName = state.items[0] ? state.items[0].name : 'A4影印紙';
+    exportWorkbook('進貨匯入範本.xlsx', [{
+      name: '進貨',
+      rows: [
+        ['品項名稱','數量','單價','供應商','備註'],
+        [sampleName, 10, 85, '○○文具行', ''],
+      ],
+    }]);
+  });
+
+  let pendingPurchaseRows = [];
+  const purFileInput = document.getElementById('import-purchase-file');
+  const purImportBtn = document.getElementById('import-purchases');
+  const purPreviewEl = document.getElementById('import-purchase-preview');
+
+  purFileInput.addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    pendingPurchaseRows = [];
+    purImportBtn.disabled = true;
+    if(!file) return;
+    if(typeof XLSX === 'undefined'){ toast('匯入元件載入失敗，請檢查網路連線後重新整理', 'err'); return; }
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type:'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+      const parsed = rows.map(r=>{
+        const itemName = String(r['品項名稱'] ?? r['name'] ?? '').trim();
+        const matchedItem = state.items.find(i=>i.name === itemName);
+        return {
+          itemName,
+          item: matchedItem,
+          qty: Number(r['數量'] ?? r['qty'] ?? 0) || 0,
+          unitPrice: Number(r['單價'] ?? r['unitPrice'] ?? 0) || 0,
+          supplier: String(r['供應商'] ?? r['supplier'] ?? '').trim(),
+          note: String(r['備註'] ?? r['note'] ?? '').trim(),
+        };
+      }).filter(r => r.itemName && r.qty > 0);
+
+      const matched = parsed.filter(r=>r.item);
+      const unmatched = parsed.filter(r=>!r.item);
+      pendingPurchaseRows = matched;
+
+      if(parsed.length === 0){
+        purPreviewEl.innerHTML = '<div class="empty">找不到可匯入的資料，請確認表頭與數量欄位</div>';
+      } else {
+        purPreviewEl.innerHTML = `
+          <div class="hint">
+            可匯入 <strong>${matched.length}</strong> 筆
+            ${unmatched.length > 0 ? `，另有 <strong style="color:var(--rust)">${unmatched.length}</strong> 筆找不到對應品項名稱、將被略過` : ''}
+          </div>
+          <table style="margin-top:8px;">
+            <thead><tr><th>品項名稱</th><th>數量</th><th>單價</th><th>供應商</th><th>狀態</th></tr></thead>
+            <tbody>
+              ${parsed.slice(0,8).map(r=>`
+                <tr>
+                  <td>${esc(r.itemName)}</td>
+                  <td class="mono">${r.qty}</td>
+                  <td class="mono">${r.unitPrice}</td>
+                  <td>${esc(r.supplier||'-')}</td>
+                  <td>${r.item ? '<span class="badge ok">OK</span>' : '<span class="badge low">找不到品項</span>'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         `;
-        itemList.appendChild(newRow);
+        purImportBtn.disabled = matched.length === 0;
+      }
+    }catch(err){
+      console.error('purchase import parse failed', err);
+      toast('檔案讀取失敗，請確認是否為正確的Excel/CSV格式', 'err');
+      purPreviewEl.innerHTML = '';
     }
+  });
 
-    function removeRow(btn) { 
-        const rows = document.querySelectorAll('.item-row');
-        if (rows.length > 1) { btn.parentElement.remove(); }
-        else { alert("申請單需至少保留一項用品。"); }
+  purImportBtn.addEventListener('click', async ()=>{
+    if(pendingPurchaseRows.length === 0) return;
+    purImportBtn.disabled = true; purImportBtn.textContent = '匯入中...';
+    const now = Date.now();
+    const newRecords = pendingPurchaseRows.map(r => ({
+      id: uid(), ts: now, itemId:r.item.id, itemName:r.item.name, unit:r.item.unit,
+      qty:r.qty, unitPrice:r.unitPrice, supplier:r.supplier, note:r.note,
+    }));
+    state.purchases.unshift(...newRecords);
+    if(SHEET_API_URL){
+      const res = await apiPost('batchAddPurchases', { data: newRecords });
+      if(!res || !res.ok){ toast('批次匯入寫入試算表失敗，請稍後重試', 'err'); }
+    } else {
+      for(const rec of newRecords){ await sSet('pur:'+rec.id, JSON.stringify(rec)); }
     }
+    pendingPurchaseRows = [];
+    toast(`已匯入 ${newRecords.length} 筆進貨紀錄`, 'ok');
+    render();
+  });
+}
 
-    async function submitForm() {
-        const name = document.getElementById('userName').value;
-        const dept = document.getElementById('department').value;
-        const items = [];
-        
-        document.querySelectorAll('.item-row').forEach(row => {
-            const itemName = row.querySelector('.item-name').value;
-            const itemQty = row.querySelector('.item-qty').value;
-            if (itemName && itemQty) {
-                // 這裡的 itemName 已經包含單位了，例如 "紙 (包)"
-                items.push({ name: itemName, qty: itemQty });
-            }
+/* ================= 庫存總表 ================= */
+function viewStock(rows){
+  const lowCount = rows.filter(r=>r.stock <= r.item.low).length;
+  const totalValue = rows.reduce((s,r)=> s + (r.value||0), 0);
+  const itemOptions = state.items.map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(i.unit)})</option>`).join('');
+  return `
+    <div class="page-head">
+      <h1>庫存總表</h1>
+      <p>庫存 = 期初庫存 + 累計進貨 − 已核准申請 + 盤點調整。低於安全庫存量的品項會標示提醒。庫存金額以進貨的加權平均成本估算。</p>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="num mono">${rows.length}</div><div class="lbl">品項總數</div></div>
+      <div class="kpi"><div class="num mono">${lowCount}</div><div class="lbl">低於安全庫存</div></div>
+      <div class="kpi"><div class="num mono">$${Math.round(totalValue).toLocaleString()}</div><div class="lbl">庫存總金額（估算）</div></div>
+    </div>
+    <div class="panel">
+      <div class="filter-row" style="justify-content:flex-end;">
+        <button class="btn ghost small" id="export-stock">匯出Excel</button>
+      </div>
+      <table>
+        <thead><tr>
+          <th>品項</th><th>分類</th><th>單位</th><th>期初庫存</th><th>累計進貨</th><th>已核准申請</th><th>盤點調整</th><th>目前庫存</th><th>安全庫存</th><th>庫存金額</th><th>狀態</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr>
+              <td>${esc(r.item.name)}</td>
+              <td>${esc(r.item.category)}</td>
+              <td>${esc(r.item.unit)}</td>
+              <td class="mono">${r.opening}</td>
+              <td class="mono">${r.purchased}</td>
+              <td class="mono">${r.approvedReq}</td>
+              <td class="mono">${r.adjusted > 0 ? '+' : ''}${r.adjusted}</td>
+              <td class="mono"><strong>${r.stock}</strong></td>
+              <td class="mono">${r.item.low}</td>
+              <td class="mono">${r.value ? '$'+Math.round(r.value).toLocaleString() : '-'}</td>
+              <td>${r.stock <= r.item.low ? '<span class="badge low">庫存偏低</span>' : '<span class="badge ok">正常</span>'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>盤點調整</h2>
+      <p class="hint" style="margin-top:0;">實際盤點後，如果數量跟系統算出來的不一樣，在這裡輸入「實際盤點到的數量」，系統會自動計算差異並記錄，之後的庫存會以此校正。</p>
+      <div class="grid2">
+        <div class="field"><label>品項 *</label><select id="adj-item">${itemOptions}</select></div>
+        <div class="field"><label>實際盤點數量 *</label><input type="number" min="0" step="1" id="adj-counted" placeholder="輸入盤點到的實際數量"></div>
+      </div>
+      <div id="adj-preview" class="hint"></div>
+      <div class="field"><label>備註</label><input type="text" id="adj-note" placeholder="例：年度盤點、破損報廢等"></div>
+      <button class="btn primary" id="submit-adjustment">送出盤點調整</button>
+    </div>
+    <div class="panel">
+      <h2>盤點紀錄</h2>
+      <div id="adj-table"></div>
+    </div>
+  `;
+}
+
+function renderAdjTable(){
+  const el = document.getElementById('adj-table');
+  if(state.adjustments.length === 0){ el.innerHTML = '<div class="empty">尚無盤點調整紀錄</div>'; return; }
+  el.innerHTML = `
+    <table>
+      <thead><tr><th>時間</th><th>品項</th><th>盤點數量</th><th>差異</th><th>備註</th><th>操作</th></tr></thead>
+      <tbody>
+        ${state.adjustments.map(a=>`
+          <tr>
+            <td class="mono">${fmtTs(a.ts)}</td>
+            <td>${esc(a.itemName)}</td>
+            <td class="mono">${a.countedQty}${esc(a.unit||'')}</td>
+            <td class="mono">${a.delta > 0 ? '+' : ''}${a.delta}</td>
+            <td>${esc(a.note||'-')}</td>
+            <td><button class="btn small danger-o" data-del-adj="${a.id}">刪除</button></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  el.querySelectorAll('button[data-del-adj]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm('確定要刪除這筆盤點調整紀錄嗎？刪除後庫存計算會恢復成調整前的數字。')) return;
+      const id = btn.dataset.delAdj;
+      state.adjustments = state.adjustments.filter(a=>a.id!==id);
+      if(SHEET_API_URL){ await apiPost('deleteAdjustment', { id }); }
+      else { await sDelete('adj:'+id); }
+      toast('盤點紀錄已刪除', 'ok');
+      render();
+    });
+  });
+}
+
+function bindStock(rows){
+  document.getElementById('export-stock').addEventListener('click', ()=>{
+    if(rows.length===0){ toast('目前沒有可匯出的資料', 'err'); return; }
+    const out = [['品項','分類','單位','期初庫存','累計進貨','已核准申請','盤點調整','目前庫存','安全庫存','庫存金額','狀態']];
+    rows.forEach(r=>{
+      out.push([r.item.name, r.item.category, r.item.unit, r.opening, r.purchased, r.approvedReq, r.adjusted, r.stock, r.item.low, Math.round(r.value||0), r.stock<=r.item.low?'庫存偏低':'正常']);
+    });
+    exportWorkbook(`庫存總表_${todayStr()}.xlsx`, [{ name:'庫存總表', rows: out }]);
+  });
+
+  const itemSelect = document.getElementById('adj-item');
+  const countedInput = document.getElementById('adj-counted');
+  const previewEl = document.getElementById('adj-preview');
+
+  function updateAdjPreview(){
+    const itemId = itemSelect.value;
+    const counted = countedInput.value === '' ? null : Number(countedInput.value);
+    const current = computeCurrentStockFor(itemId);
+    if(counted === null){
+      previewEl.textContent = `系統目前計算的庫存為 ${current}，請輸入實際盤點數量。`;
+    } else {
+      const delta = counted - current;
+      previewEl.innerHTML = `系統目前庫存 <strong>${current}</strong>，實際盤點 <strong>${counted}</strong>，將記錄差異：<strong style="color:${delta===0?'var(--teal)':'var(--rust)'}">${delta>0?'+':''}${delta}</strong>`;
+    }
+  }
+  itemSelect.addEventListener('change', updateAdjPreview);
+  countedInput.addEventListener('input', updateAdjPreview);
+  updateAdjPreview();
+
+  document.getElementById('submit-adjustment').addEventListener('click', async ()=>{
+    const itemId = itemSelect.value;
+    const item = state.items.find(i=>i.id===itemId);
+    if(!item) return;
+    if(countedInput.value === ''){ toast('請輸入實際盤點數量', 'err'); return; }
+    const counted = Number(countedInput.value)||0;
+    const current = computeCurrentStockFor(itemId);
+    const delta = counted - current;
+    const note = document.getElementById('adj-note').value.trim();
+    if(delta === 0){ toast('盤點數量與系統計算相同，沒有差異需要記錄', 'ok'); return; }
+
+    const record = { id: uid(), ts: Date.now(), itemId, itemName:item.name, unit:item.unit, delta, countedQty:counted, note };
+    let saved;
+    if(SHEET_API_URL){
+      const res = await apiPost('addAdjustment', { data: record });
+      saved = !!(res && res.ok);
+    } else {
+      saved = await sSet('adj:'+record.id, JSON.stringify(record));
+    }
+    if(!saved){ toast('儲存失敗，請稍後再試', 'err'); return; }
+    state.adjustments.unshift(record);
+    toast(`已記錄盤點差異：${delta>0?'+':''}${delta}`, 'ok');
+    render();
+  });
+
+  renderAdjTable();
+}
+
+/* ================= 品項設定 ================= */
+function viewItemAdmin(){
+  return `
+    <div class="page-head">
+      <h1>品項設定</h1>
+      <p>管理可供申請的耗材品項與安全庫存量。</p>
+    </div>
+    <div class="panel">
+      <h2 id="item-form-title">新增品項</h2>
+      <div class="grid2">
+        <div class="field"><label>品項編號</label><input type="text" id="i-code" placeholder="例：A1-1"></div>
+        <div class="field"><label>品項名稱 *</label><input type="text" id="i-name" placeholder="例：裝訂膠環（8MM）"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>單位 *</label><input type="text" id="i-unit" placeholder="例：支"></div>
+        <div class="field"><label>分類 *</label><input type="text" id="i-cat" placeholder="例：文具"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>安全庫存量</label><input type="number" min="0" id="i-low" value="5"></div>
+        <div class="field"><label>期初庫存</label><input type="number" min="0" id="i-opening" value="0"></div>
+      </div>
+      <p class="hint" style="margin-top:-6px;">期初庫存：導入系統前，倉庫已有的現貨數量，只需在第一次建立品項時填寫。</p>
+      <button class="btn primary" id="add-item">新增品項</button>
+      <button class="btn ghost" id="cancel-edit-item" style="display:none;">取消編輯</button>
+    </div>
+    <div class="panel">
+      <h2>批次匯入品項</h2>
+      <p class="hint" style="margin-top:0;">
+        從 Excel／CSV 匯入多筆品項。檔案需含表頭：<span class="mono">品項編號、品項名稱、單位、分類、安全庫存</span>（品項編號可留空，可先下載範本填寫）。
+      </p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="btn ghost small" id="download-template">下載匯入範本</button>
+        <input type="file" id="import-file" accept=".xlsx,.xls,.csv" style="max-width:260px;">
+        <button class="btn primary small" id="import-items" disabled>確認匯入</button>
+      </div>
+      <div id="import-preview"></div>
+    </div>
+    <div class="panel">
+      <h2>目前品項清單</h2>
+      <table>
+        <thead><tr><th>編號</th><th>品項</th><th>分類</th><th>單位</th><th>安全庫存</th><th>期初庫存</th><th>操作</th></tr></thead>
+        <tbody>
+          ${state.items.map(i=>`
+            <tr>
+              <td class="mono">${esc(i.code||'-')}</td><td>${esc(i.name)}</td><td>${esc(i.category)}</td><td>${esc(i.unit)}</td><td class="mono">${i.low}</td><td class="mono">${i.opening||0}</td>
+              <td>
+                <button class="btn small ghost" data-edit-item="${i.id}">編輯</button>
+                <button class="btn small danger-o" data-del="${i.id}">刪除</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function bindItemAdmin(){
+  let editingId = null;
+  const codeEl = document.getElementById('i-code');
+  const nameEl = document.getElementById('i-name');
+  const unitEl = document.getElementById('i-unit');
+  const catEl = document.getElementById('i-cat');
+  const lowEl = document.getElementById('i-low');
+  const openingEl = document.getElementById('i-opening');
+  const submitBtn = document.getElementById('add-item');
+  const cancelBtn = document.getElementById('cancel-edit-item');
+  const titleEl = document.getElementById('item-form-title');
+
+  function resetItemForm(){
+    editingId = null;
+    codeEl.value=''; nameEl.value=''; unitEl.value=''; catEl.value=''; lowEl.value=5; openingEl.value=0;
+    submitBtn.textContent = '新增品項';
+    cancelBtn.style.display = 'none';
+    titleEl.textContent = '新增品項';
+  }
+
+  submitBtn.addEventListener('click', async ()=>{
+    const code = codeEl.value.trim();
+    const name = nameEl.value.trim();
+    const unit = unitEl.value.trim();
+    const category = catEl.value.trim();
+    const low = Number(lowEl.value)||0;
+    const opening = Number(openingEl.value)||0;
+    if(!name || !unit || !category){ toast('請完整填寫品項名稱、單位、分類', 'err'); return; }
+
+    if(editingId){
+      const item = { id: editingId, code, name, unit, category, low, opening };
+      const idx = state.items.findIndex(i=>i.id===editingId);
+      if(idx > -1) state.items[idx] = item;
+      if(SHEET_API_URL){ await apiPost('updateItem', { data: item }); }
+      else { await sSet('items', JSON.stringify(state.items)); }
+      toast('品項已更新', 'ok');
+    } else {
+      const item = { id:'itm-'+uid(), code, name, unit, category, low, opening };
+      state.items.push(item);
+      if(SHEET_API_URL){ await apiPost('addItem', { data: item }); }
+      else { await sSet('items', JSON.stringify(state.items)); }
+      toast('品項已新增', 'ok');
+    }
+    render();
+  });
+
+  cancelBtn.addEventListener('click', resetItemForm);
+
+  document.querySelectorAll('button[data-edit-item]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const it = state.items.find(i=>i.id===btn.dataset.editItem);
+      if(!it) return;
+      editingId = it.id;
+      codeEl.value = it.code || '';
+      nameEl.value = it.name;
+      unitEl.value = it.unit;
+      catEl.value = it.category;
+      lowEl.value = it.low;
+      openingEl.value = it.opening || 0;
+      submitBtn.textContent = '更新品項';
+      cancelBtn.style.display = '';
+      titleEl.textContent = '編輯品項';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  document.querySelectorAll('button[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm('確定要刪除此品項嗎？（歷史紀錄不受影響）')) return;
+      const delId = btn.dataset.del;
+      state.items = state.items.filter(i=>i.id!==delId);
+      if(SHEET_API_URL){ await apiPost('deleteItem', { id: delId }); }
+      else { await sSet('items', JSON.stringify(state.items)); }
+      toast('品項已刪除', 'ok');
+      render();
+    });
+  });
+
+  document.getElementById('download-template').addEventListener('click', ()=>{
+    exportWorkbook('品項匯入範本.xlsx', [{
+      name: '品項',
+      rows: [
+        ['品項編號','品項名稱','單位','分類','安全庫存','期初庫存'],
+        ['A1-1','裝訂膠環（8MM）','包','文具', 10, 0],
+        ['','隨身碟32G','個','辦公設備耗材', 3, 5],
+      ],
+    }]);
+  });
+
+  let pendingImportRows = [];
+  const fileInput = document.getElementById('import-file');
+  const importBtn = document.getElementById('import-items');
+  const previewEl = document.getElementById('import-preview');
+
+  fileInput.addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    pendingImportRows = [];
+    importBtn.disabled = true;
+    if(!file) return;
+    if(typeof XLSX === 'undefined'){ toast('匯入元件載入失敗，請檢查網路連線後重新整理', 'err'); return; }
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type:'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+      pendingImportRows = rows.map(r=>({
+        code: String(r['品項編號'] ?? r['code'] ?? '').trim(),
+        name: String(r['品項名稱'] ?? r['name'] ?? '').trim(),
+        unit: String(r['單位'] ?? r['unit'] ?? '').trim(),
+        category: String(r['分類'] ?? r['category'] ?? '').trim(),
+        low: Number(r['安全庫存'] ?? r['low'] ?? 0) || 0,
+        opening: Number(r['期初庫存'] ?? r['opening'] ?? 0) || 0,
+      })).filter(r => r.name && r.unit && r.category);
+
+      if(pendingImportRows.length === 0){
+        previewEl.innerHTML = '<div class="empty">找不到可匯入的資料，請確認表頭是否為「品項編號、品項名稱、單位、分類、安全庫存、期初庫存」</div>';
+      } else {
+        previewEl.innerHTML = `
+          <div class="hint">讀取到 <strong>${pendingImportRows.length}</strong> 筆品項，預覽前 5 筆：</div>
+          <table style="margin-top:8px;">
+            <thead><tr><th>編號</th><th>品項名稱</th><th>單位</th><th>分類</th><th>安全庫存</th><th>期初庫存</th></tr></thead>
+            <tbody>
+              ${pendingImportRows.slice(0,5).map(r=>`<tr><td class="mono">${esc(r.code||'-')}</td><td>${esc(r.name)}</td><td>${esc(r.unit)}</td><td>${esc(r.category)}</td><td class="mono">${r.low}</td><td class="mono">${r.opening}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        `;
+        importBtn.disabled = false;
+      }
+    }catch(err){
+      console.error('import parse failed', err);
+      toast('檔案讀取失敗，請確認是否為正確的Excel/CSV格式', 'err');
+      previewEl.innerHTML = '';
+    }
+  });
+
+  importBtn.addEventListener('click', async ()=>{
+    if(pendingImportRows.length === 0) return;
+    importBtn.disabled = true; importBtn.textContent = '匯入中...';
+    const newItems = pendingImportRows.map(r => ({
+      id:'itm-'+uid(), code:r.code, name:r.name, unit:r.unit, category:r.category, low:r.low, opening:r.opening
+    }));
+    state.items.push(...newItems);
+    if(SHEET_API_URL){
+      const res = await apiPost('batchAddItems', { data: newItems });
+      if(!res || !res.ok){ toast('批次匯入寫入試算表失敗，請稍後重試', 'err'); }
+    } else {
+      await sSet('items', JSON.stringify(state.items));
+    }
+    pendingImportRows = [];
+    toast(`已匯入 ${newItems.length} 筆品項`, 'ok');
+    render();
+  });
+}
+
+/* ================= 供應商管理 ================= */
+function viewSupplierAdmin(){
+  return `
+    <div class="page-head">
+      <h1>供應商管理</h1>
+      <p>維護常用供應商清單，「進貨作業」的供應商欄位可直接從清單選擇，不用每次重新輸入。</p>
+    </div>
+    <div class="panel">
+      <h2 id="supplier-form-title">新增供應商</h2>
+      <div class="grid2">
+        <div class="field"><label>供應商名稱 *</label><input type="text" id="s-name" placeholder="例：○○文具行"></div>
+        <div class="field"><label>聯絡人</label><input type="text" id="s-contact" placeholder="選填"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>電話</label><input type="text" id="s-phone" placeholder="選填"></div>
+        <div class="field"><label>備註</label><input type="text" id="s-note" placeholder="選填"></div>
+      </div>
+      <button class="btn primary" id="add-supplier">新增供應商</button>
+      <button class="btn ghost" id="cancel-edit-supplier" style="display:none;">取消編輯</button>
+    </div>
+    <div class="panel">
+      <h2>供應商清單</h2>
+      ${state.suppliers.length === 0 ? '<div class="empty">尚無供應商，請於上方新增</div>' : `
+        <table>
+          <thead><tr><th>供應商</th><th>聯絡人</th><th>電話</th><th>備註</th><th>操作</th></tr></thead>
+          <tbody>
+            ${state.suppliers.map(s=>`
+              <tr>
+                <td>${esc(s.name)}</td>
+                <td>${esc(s.contact||'-')}</td>
+                <td>${esc(s.phone||'-')}</td>
+                <td>${esc(s.note||'-')}</td>
+                <td>
+                  <button class="btn small ghost" data-edit-sup="${s.id}">編輯</button>
+                  <button class="btn small danger-o" data-del-sup="${s.id}">刪除</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `}
+    </div>
+  `;
+}
+
+function bindSupplierAdmin(){
+  let editingId = null;
+  const nameEl = document.getElementById('s-name');
+  const contactEl = document.getElementById('s-contact');
+  const phoneEl = document.getElementById('s-phone');
+  const noteEl = document.getElementById('s-note');
+  const submitBtn = document.getElementById('add-supplier');
+  const cancelBtn = document.getElementById('cancel-edit-supplier');
+  const titleEl = document.getElementById('supplier-form-title');
+
+  function resetForm(){
+    editingId = null;
+    nameEl.value=''; contactEl.value=''; phoneEl.value=''; noteEl.value='';
+    submitBtn.textContent = '新增供應商';
+    cancelBtn.style.display = 'none';
+    titleEl.textContent = '新增供應商';
+  }
+
+  submitBtn.addEventListener('click', async ()=>{
+    const name = nameEl.value.trim();
+    const contact = contactEl.value.trim();
+    const phone = phoneEl.value.trim();
+    const note = noteEl.value.trim();
+    if(!name){ toast('請填寫供應商名稱', 'err'); return; }
+
+    if(editingId){
+      const supplier = { id: editingId, name, contact, phone, note };
+      const idx = state.suppliers.findIndex(s=>s.id===editingId);
+      if(idx > -1) state.suppliers[idx] = supplier;
+      if(SHEET_API_URL){ await apiPost('updateSupplier', { data: supplier }); }
+      else { await sSet('suppliers', JSON.stringify(state.suppliers)); }
+      toast('供應商已更新', 'ok');
+    } else {
+      const supplier = { id:'sup-'+uid(), name, contact, phone, note };
+      state.suppliers.push(supplier);
+      if(SHEET_API_URL){ await apiPost('addSupplier', { data: supplier }); }
+      else { await sSet('suppliers', JSON.stringify(state.suppliers)); }
+      toast('供應商已新增', 'ok');
+    }
+    render();
+  });
+
+  cancelBtn.addEventListener('click', resetForm);
+
+  document.querySelectorAll('button[data-edit-sup]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const sup = state.suppliers.find(s=>s.id===btn.dataset.editSup);
+      if(!sup) return;
+      editingId = sup.id;
+      nameEl.value = sup.name;
+      contactEl.value = sup.contact || '';
+      phoneEl.value = sup.phone || '';
+      noteEl.value = sup.note || '';
+      submitBtn.textContent = '更新供應商';
+      cancelBtn.style.display = '';
+      titleEl.textContent = '編輯供應商';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  document.querySelectorAll('button[data-del-sup]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm('確定要刪除此供應商嗎？（歷史進貨紀錄不受影響）')) return;
+      const delId = btn.dataset.delSup;
+      state.suppliers = state.suppliers.filter(s=>s.id!==delId);
+      if(SHEET_API_URL){ await apiPost('deleteSupplier', { id: delId }); }
+      else { await sSet('suppliers', JSON.stringify(state.suppliers)); }
+      toast('供應商已刪除', 'ok');
+      render();
+    });
+  });
+}
+
+/* ================= 分析管理 ================= */
+const DIMENSION_LABELS = { applicant:'申請人', dept:'部門', item:'項目明細' };
+const SUB_LABELS = { applicant:'品項明細', dept:'品項明細', item:'申請人明細' };
+
+function computeAnalyticsReport(dimension, startTs, endTs){
+  const filtered = state.requests.filter(r=>{
+    if(startTs !== null && r.ts < startTs) return false;
+    if(endTs !== null && r.ts > endTs) return false;
+    return true;
+  });
+
+  const map = {};
+  if(dimension === 'item'){
+    filtered.forEach(r=>{
+      const subKey = r.applicant || '未填寫';
+      r.items.forEach(l=>{
+        if(!map[l.name]) map[l.name] = { count:0, totalQty:0, sub:{} };
+        map[l.name].count += 1;
+        map[l.name].totalQty += Number(l.qty)||0;
+        map[l.name].sub[subKey] = (map[l.name].sub[subKey]||0) + (Number(l.qty)||0);
+      });
+    });
+  } else {
+    filtered.forEach(r=>{
+      const key = dimension === 'applicant' ? (r.applicant || '未填寫') : (r.dept || '未填寫');
+      if(!map[key]) map[key] = { count:0, totalQty:0, sub:{} };
+      map[key].count += 1;
+      r.items.forEach(l=>{
+        map[key].totalQty += Number(l.qty)||0;
+        map[key].sub[l.name] = (map[key].sub[l.name]||0) + (Number(l.qty)||0);
+      });
+    });
+  }
+
+  const rows = Object.entries(map)
+    .map(([name, v])=>({
+      name, count:v.count, totalQty:v.totalQty,
+      sub: Object.entries(v.sub)
+        .map(([n,q])=>({ name:n, qty:q }))
+        .sort((a,b)=> b.qty - a.qty),
+    }))
+    .sort((a,b)=> b.totalQty - a.totalQty);
+
+  return { rows, requestCount: filtered.length };
+}
+
+function viewAnalytics(){
+  return `
+    <div class="page-head">
+      <h1>分析管理</h1>
+      <p>選擇日期區間與分析維度，統計申請總表的數量分佈，可匯出Excel。</p>
+    </div>
+    <div class="panel">
+      <h2>篩選條件</h2>
+      <div class="grid2">
+        <div class="field"><label>起始日期</label><input type="date" id="az-start"></div>
+        <div class="field"><label>結束日期</label><input type="date" id="az-end"></div>
+      </div>
+      <div class="field" style="max-width:260px;">
+        <label>分析維度</label>
+        <select id="az-dimension">
+          <option value="applicant">依申請人</option>
+          <option value="dept">依部門</option>
+          <option value="item">依項目明細</option>
+        </select>
+      </div>
+      <button class="btn primary" id="az-run">產出報表</button>
+    </div>
+    <div class="panel" id="az-result-panel" style="display:none;">
+      <div class="filter-row" style="justify-content:space-between;">
+        <h2 style="margin:0;padding:0;border:none;" id="az-result-title">報表結果</h2>
+        <button class="btn ghost small" id="az-export">匯出Excel</button>
+      </div>
+      <div id="az-result-table"></div>
+    </div>
+  `;
+}
+
+function bindAnalytics(){
+  let lastReport = null;
+  let lastDimension = null;
+  let lastRangeLabel = '';
+  let lastStartTs = null;
+  let lastEndTs = null;
+
+  document.getElementById('az-run').addEventListener('click', ()=>{
+    const dimension = document.getElementById('az-dimension').value;
+    const startVal = document.getElementById('az-start').value;
+    const endVal = document.getElementById('az-end').value;
+    const startTs = startVal ? new Date(startVal+'T00:00:00').getTime() : null;
+    const endTs = endVal ? new Date(endVal+'T23:59:59').getTime() : null;
+
+    const report = computeAnalyticsReport(dimension, startTs, endTs);
+    lastReport = report;
+    lastDimension = dimension;
+    lastRangeLabel = `${startVal||'不限'} ~ ${endVal||'不限'}`;
+    lastStartTs = startTs;
+    lastEndTs = endTs;
+
+    const label = DIMENSION_LABELS[dimension];
+    const panel = document.getElementById('az-result-panel');
+    const titleEl = document.getElementById('az-result-title');
+    const tableEl = document.getElementById('az-result-table');
+    panel.style.display = '';
+    titleEl.textContent = `依${label}分析（區間內共 ${report.requestCount} 筆申請）`;
+
+    if(report.rows.length === 0){
+      tableEl.innerHTML = '<div class="empty">此區間內沒有符合的申請紀錄</div>';
+      return;
+    }
+    const subLabel = SUB_LABELS[dimension];
+    tableEl.innerHTML = `
+      <table>
+        <thead><tr><th>${label}</th><th>申請筆數</th><th>總數量</th><th>${subLabel}</th></tr></thead>
+        <tbody>
+          ${report.rows.map(r=>`
+            <tr>
+              <td>${esc(r.name)}</td>
+              <td class="mono">${r.count}</td>
+              <td class="mono">${r.totalQty}</td>
+              <td>${r.sub.map(s=>`${esc(s.name)} x ${s.qty}`).join('<br>')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  });
+
+  document.getElementById('az-export').addEventListener('click', ()=>{
+    if(!lastReport || lastReport.rows.length === 0){ toast('目前沒有可匯出的報表，請先產出報表', 'err'); return; }
+    const label = DIMENSION_LABELS[lastDimension];
+    const subLabel = SUB_LABELS[lastDimension];
+
+    const summary = [[label, subLabel, `${subLabel}數量`, '申請筆數合計', '總數量合計']];
+    lastReport.rows.forEach(r=>{
+      if(r.sub.length === 0){
+        summary.push([r.name, '', '', r.count, r.totalQty]);
+      } else {
+        r.sub.forEach(s=>{
+          summary.push([r.name, s.name, s.qty, r.count, r.totalQty]);
         });
+      }
+    });
+    summary.push([]);
+    summary.push(['區間', lastRangeLabel]);
+    summary.push(['區間內申請總筆數', lastReport.requestCount]);
 
-        if (!name || !dept || items.length === 0) { 
-            alert("請完整填寫姓名、部門並選擇項目。"); 
-            return; 
-        }
+    // 不受目前選擇的分析維度影響，固定產出「申請人 x 品項」逐列明細，方便直接拉樞紐分析表
+    const filtered = state.requests.filter(r=>{
+      if(lastStartTs !== null && r.ts < lastStartTs) return false;
+      if(lastEndTs !== null && r.ts > lastEndTs) return false;
+      return true;
+    });
+    const pivotDetail = [['日期','申請人','部門','品項','數量','單位','狀態']];
+    filtered.forEach(r=>{
+      r.items.forEach(l=>{
+        pivotDetail.push([fmtTs(r.ts), r.applicant, r.dept||'', l.name, l.qty, l.unit, statusLabel(r.status)]);
+      });
+    });
 
-        const scriptUrl = 'https://script.google.com/macros/s/AKfycbx0zp5tqdg-frvgbK2_zXYh60BsdIqi-oCU8om3DyRWS5dB9mwg6-F9asZr5WRiGYHw/exec'; 
+    exportWorkbook(`分析報表_${label}_${todayStr()}.xlsx`, [
+      { name: `依${label}分析`, rows: summary },
+      { name: '申請人-品項明細(可樞紐分析)', rows: pivotDetail },
+    ]);
+  });
+}
 
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true;
-        btn.innerText = "傳送中...";
+/* ================= 系統設定 ================= */
+function viewSettings(){
+  const c = state.config;
+  return `
+    <div class="page-head">
+      <h1>系統設定</h1>
+      <p>管理資料庫連線、Email通知與管理者密碼。這些設定會同步給所有使用者。</p>
+    </div>
+    <div class="panel">
+      <h2>資料庫連線（Google 試算表）</h2>
+      <p class="hint" style="margin-top:0;">
+        系統已內建連線到你的 Google 試算表，一般不需要更改。若要換成另一份試算表，貼上新的 Apps Script Web App 網址（結尾為 /exec）並儲存即可。
+      </p>
+      <div class="field"><label>Web App 網址</label><input type="text" id="c-sheeturl" value="${esc(SHEET_API_URL||'')}" placeholder="https://script.google.com/macros/s/xxxx/exec"></div>
+      <button class="btn primary" id="save-sheeturl">儲存並重新連線</button>
+      <div class="hint">${SHEET_API_URL ? '目前狀態：<strong style="color:var(--teal)">已連接 Google 試算表</strong>' : '目前狀態：<strong style="color:var(--muted)">使用系統內建暫存儲存</strong>'}</div>
+    </div>
+    <div class="panel">
+      <h2>Email 通知</h2>
+      <p class="hint" style="margin-top:0;">申請送出後，系統會透過 Google Apps Script 自動寄信通知下方信箱（需已在 Apps Script 完成 MailApp 授權）。</p>
+      <div class="field" style="max-width:360px;"><label>通知收件Email</label><input type="email" id="c-notify" value="${esc(c.notifyEmail)}" placeholder="you@company.com"></div>
+      <button class="btn primary" id="save-settings">儲存設定</button>
+    </div>
+    <div class="panel">
+      <h2>管理者密碼</h2>
+      <p class="hint" style="margin-top:0;">同仁只能看到「提出申請」，其餘後台分頁需輸入此密碼才能進入。目前若未曾設定過，預設密碼為 <span class="mono">${DEFAULT_ADMIN_PASSWORD}</span>，建議立即修改。</p>
+      <div class="field" style="max-width:320px;">
+        <label>新的管理者密碼</label>
+        <input type="password" id="c-pw" placeholder="設定新密碼">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;color:var(--muted);">
+          <input type="checkbox" id="c-pw-toggle" style="width:auto;"> 顯示密碼
+        </label>
+      </div>
+      <button class="btn ghost" id="save-pw">更新密碼</button>
+    </div>
+  `;
+}
 
-        try {
-            await fetch(scriptUrl, { 
-                method: 'POST', 
-                mode: 'no-cors', 
-                body: JSON.stringify({ name, dept, items }) 
-            });
-            alert("申請已成功送出！通知已寄送至林昆霖信箱。");
-            location.reload();
-        } catch (e) {
-            alert("錯誤：" + e);
-            btn.disabled = false;
-        }
-    }
+function bindSettings(){
+  document.getElementById('save-sheeturl').addEventListener('click', async ()=>{
+    const url = document.getElementById('c-sheeturl').value.trim();
+    await sSet('sheetApiUrl', url, true);
+    toast(url ? '已儲存，正在重新連線...' : '已改回使用系統內建儲存', 'ok');
+    state.loaded = false;
+    render();
+    await loadAll();
+    render();
+  });
+  document.getElementById('save-settings').addEventListener('click', async ()=>{
+    state.config = {
+      ...state.config,
+      notifyEmail: document.getElementById('c-notify').value.trim(),
+    };
+    if(SHEET_API_URL){ await apiPost('saveConfig', { data: state.config }); }
+    else { await sSet('config', JSON.stringify(state.config)); }
+    toast('設定已儲存', 'ok');
+  });
+  document.getElementById('c-pw-toggle').addEventListener('change', (e)=>{
+    document.getElementById('c-pw').type = e.target.checked ? 'text' : 'password';
+  });
+  document.getElementById('save-pw').addEventListener('click', async ()=>{
+    const pw = document.getElementById('c-pw').value;
+    if(!pw || pw.length < 4){ toast('密碼至少需 4 碼', 'err'); return; }
+    state.config = { ...state.config, adminPassword: pw };
+    if(SHEET_API_URL){ await apiPost('saveConfig', { data: state.config }); }
+    else { await sSet('config', JSON.stringify(state.config)); }
+    document.getElementById('c-pw').value = '';
+    toast('管理者密碼已更新', 'ok');
+  });
+}
+
+/* ---------------- init ---------------- */
+(async function init(){
+  render();
+  await loadAll();
+  render();
+})();
 </script>
 </body>
 </html>
